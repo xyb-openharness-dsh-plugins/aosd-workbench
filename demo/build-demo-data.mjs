@@ -76,7 +76,10 @@ const A = {
     { id: 'A-doc-ct-2026-08-18', title: '胸部 CT（合成）', docType: '影像', org: '演示医院·影像科', collectedAt: '2026-08-18', reportedAt: '2026-08-19', timePrecision: 'day', relativePath: 'demo/docs/A/2026-08-18-ct.pdf', mime: 'application/pdf', hashKind: 'demo-id', reviewState: 'confirmed', note: '合成影像报告原文，无真实影像文件。', ord: 10 },
     { id: 'A-doc-note-2026-10-09', title: '门诊病历（合成）', docType: '门诊病历', org: '演示医院·风湿免疫科', collectedAt: '2026-10-09', reportedAt: '2026-10-09', timePrecision: 'day', relativePath: 'demo/docs/A/2026-10-09-note.pdf', mime: 'application/pdf', hashKind: 'demo-id', reviewState: 'confirmed', note: '合成病历；医嘱原话见“用药与医嘱”。', ord: 11 },
   ],
-  candidates: [],
+  candidates: [
+    { id: 'c-A-01', documentId: 'A-doc-lab-2026-10-19', fieldName: 'C 反应蛋白', rawText: '5', valueText: '5', valueNum: 5, unit: 'mg/L', refLow: 0, refHigh: 8, collectedAt: '2026-10-19', decision: 'pending', note: '待逐项核对；未入事实。', ord: 1 },
+    { id: 'c-A-02', documentId: 'A-doc-lab-2026-10-19', fieldName: '铁蛋白', rawText: '170', valueText: '170', valueNum: 170, unit: 'ng/mL', refLow: 15, refHigh: 150, collectedAt: '2026-10-19', decision: 'pending', note: '待逐项核对；未入事实。', ord: 2 },
+  ],
   metrics: [
     { id: 'crp', name: 'C 反应蛋白', unit: 'mg/L', kind: 'numeric', category: '炎症指标', decimals: 1, orgContext: '演示医院', methodContext: '免疫比浊法（合成）', note: '参考范围来自合成报告，不是通用标准。', ord: 1 },
     { id: 'esr', name: '红细胞沉降率', unit: 'mm/h', kind: 'numeric', category: '炎症指标', decimals: 0, orgContext: '演示医院', methodContext: '魏氏法（合成）', note: '参考范围来自合成报告。', ord: 2 },
@@ -103,6 +106,26 @@ const A = {
     { id: 'm-A-10', drugName: '托珠单抗', doseText: '8 mg/kg 静脉输注', route: '静脉', eventKind: 'actual', startedOn: '2026-10-02', endedOn: null, note: '实际输注。', doctorQuote: null, patientUnderstanding: null, sourceDocumentId: null, revision: 1, ord: 10 },
     { id: 'm-A-11', drugName: '甲氨蝶呤', doseText: '10 mg 口服 每周一次', route: '口服', eventKind: 'planned', startedOn: '2026-09-11', endedOn: null, note: '因关节症状加用（合成）；实际服用未逐次记录。', doctorQuote: '关节症状还在，加甲氨蝶呤 10 mg 每周。', patientUnderstanding: '每周一次。', sourceDocumentId: null, revision: 1, ord: 11 },
   ],
+  nutrition: [
+    { id: 'nut-A-01', occurredAt: '2026-05-13', text: '这两天胃口差，只吃了半碗粥。', intake: '半碗粥', weightKg: null, note: '发热期间记录', isPrivate: false, ord: 1 },
+    { id: 'nut-A-02', occurredAt: '2026-06-02', text: '下午特别累，午饭没吃，晚上补了一小碗面。', intake: '一小碗面', weightKg: null, note: null, isPrivate: false, ord: 2 },
+    { id: 'nut-A-03', occurredAt: '2026-07-11', text: '家人说这两天吃得少。', intake: '少于平时', weightKg: null, note: '家属观察', isPrivate: false, ord: 3 },
+    { id: 'nut-A-04', occurredAt: '2026-08-20', text: '激素后容易饿，夜里加了一次水果。', intake: '水果一份', weightKg: 52.4, note: '体重为家用秤自测', isPrivate: false, ord: 4 },
+    { id: 'nut-A-05', occurredAt: '2026-09-18', text: '胃口比上个月好，能吃完一份午饭。', intake: '一份午饭', weightKg: 53.1, note: null, isPrivate: false, ord: 5 },
+    { id: 'nut-A-06', occurredAt: '2026-10-15', text: '早上恶心，只喝了豆浆。', intake: '豆浆一杯', weightKg: 52.8, note: null, isPrivate: false, ord: 6 },
+  ],
+  mind: [
+    { id: 'mind-A-01', occurredAt: '2026-06-10', text: '担心长期吃激素，脸变圆，不想见朋友。', mood: '低落', sleep: '入睡难', isPrivate: true, note: '默认私密，不导出、不发送 AI', ord: 1 },
+    { id: 'mind-A-02', occurredAt: '2026-08-03', text: '照镜子会烦，但今天愿意出门走一圈。', mood: '复杂', sleep: '尚可', isPrivate: true, note: null, ord: 2 },
+    { id: 'mind-A-03', occurredAt: '2026-09-22', text: '和妈妈聊了复查的事，心里踏实一点。', mood: '平稳', sleep: '尚可', isPrivate: false, note: '患者选择可让家属看到', ord: 3 },
+    { id: 'mind-A-04', occurredAt: '2026-10-12', text: '工作请假多了，怕同事问。', mood: '焦虑', sleep: '一般', isPrivate: true, note: null, ord: 4 },
+  ],
+  profileDoc: {
+    definition: '成人斯蒂尔病是一种罕见、病因不明的自身炎症性疾病。',
+    diagnosisText: '医生记录：成人斯蒂尔病（2026-05，首次风湿免疫科门诊）。',
+    keyReports: ['A-doc-lab-2026-05-04', 'A-doc-note-2026-10-09'],
+    careTeam: ['演示医院 · 风湿免疫科'],
+  },
   replies: [
     { id: 'r-A-01', occurredAt: '2026-05-08', speaker: '医生', dept: '风湿免疫科', quote: '考虑成人斯蒂尔病，先完善感染和肿瘤筛查；泼尼松 30 mg 起始。', patientUnderstanding: '开始激素，等筛查结果。', relatedQuestionId: null, ord: 1 },
     { id: 'r-A-02', occurredAt: '2026-06-19', speaker: '医生', dept: '风湿免疫科', quote: '炎症指标下来了，激素减到 20 mg，两周复查。', patientUnderstanding: '减量，两周复查。', relatedQuestionId: 'q-A-01', ord: 2 },
@@ -178,6 +201,24 @@ const B = {
     { id: 'm-B-04', drugName: '甲氨蝶呤', doseText: '10 mg 口服 每周一次', route: '口服', eventKind: 'planned', startedOn: '2026-08-12', endedOn: null, note: '复诊调整。', doctorQuote: '甲氨蝶呤加到 10 mg 每周。', patientUnderstanding: '加到 10 mg。', sourceDocumentId: null, revision: 1, ord: 4 },
     { id: 'm-B-05', drugName: '叶酸', doseText: '5 mg 口服 每周一次（非甲氨蝶呤日）', route: '口服', eventKind: 'planned', startedOn: '2026-05-20', endedOn: null, note: '与甲氨蝶呤同次医嘱。', doctorQuote: '叶酸 5 mg，错开一天。', patientUnderstanding: '错开一天吃。', sourceDocumentId: null, revision: 1, ord: 5 },
   ],
+  nutrition: [
+    { id: 'nut-B-01', occurredAt: '2026-05-25', text: '早上吃药后胃不舒服，吃了点苏打饼干。', intake: '苏打饼干', weightKg: null, note: null, isPrivate: false, ord: 1 },
+    { id: 'nut-B-02', occurredAt: '2026-06-20', text: '出差在外，三餐不规律。', intake: '不规律', weightKg: null, note: null, isPrivate: false, ord: 2 },
+    { id: 'nut-B-03', occurredAt: '2026-08-01', text: '这周应酬多，酒没喝。', intake: '正常', weightKg: null, note: '患者自述', isPrivate: false, ord: 3 },
+    { id: 'nut-B-04', occurredAt: '2026-09-15', text: '关节疼时不想做饭，叫了两次外卖。', intake: '外卖', weightKg: null, note: null, isPrivate: false, ord: 4 },
+    { id: 'nut-B-05', occurredAt: '2026-10-10', text: '体重比上次门诊轻了一点。', intake: '正常', weightKg: 70.2, note: '家用秤自测', isPrivate: false, ord: 5 },
+  ],
+  mind: [
+    { id: 'mind-B-01', occurredAt: '2026-07-02', text: '担心长期吃药影响肝功能。', mood: '担心', sleep: '一般', isPrivate: true, note: '默认私密', ord: 1 },
+    { id: 'mind-B-02', occurredAt: '2026-08-20', text: '出差多，怕在外地发作没人帮忙。', mood: '焦虑', sleep: '入睡难', isPrivate: true, note: null, ord: 2 },
+    { id: 'mind-B-03', occurredAt: '2026-10-05', text: '和配偶说了工作上的担心，感觉好一些。', mood: '平稳', sleep: '尚可', isPrivate: false, note: null, ord: 3 },
+  ],
+  profileDoc: {
+    definition: '成人斯蒂尔病是一种罕见、病因不明的自身炎症性疾病。',
+    diagnosisText: '医生记录：成人斯蒂尔病（2026-05，首次风湿免疫科门诊）。',
+    keyReports: ['B-doc-lab-2026-05-19', 'B-doc-us-2026-05-21'],
+    careTeam: ['演示市第一医院 · 风湿科', '演示医院 · 风湿免疫科'],
+  },
   replies: [
     { id: 'r-B-01', occurredAt: '2026-05-20', speaker: '医生', dept: '风湿免疫科', quote: '按关节炎型处理，甲氨蝶呤每周一次，泼尼松 15 mg，叶酸同服。', patientUnderstanding: '每周一次甲氨蝶呤。', relatedQuestionId: null, ord: 1 },
     { id: 'r-B-02', occurredAt: '2026-07-15', speaker: '医生', dept: '风湿免疫科', quote: '关节比上次好，激素减到 10 mg；甲氨蝶呤漏一次不要补双倍。', patientUnderstanding: '漏了不补双倍。', relatedQuestionId: 'q-B-01', ord: 2 },
@@ -323,6 +364,9 @@ CREATE TABLE observations (profile_key TEXT NOT NULL, id TEXT NOT NULL, metric_i
 CREATE TABLE medication_events (id TEXT NOT NULL, profile_key TEXT NOT NULL, drug_name TEXT NOT NULL, dose_text TEXT NOT NULL, route TEXT NOT NULL, event_kind TEXT NOT NULL, started_on TEXT NOT NULL, ended_on TEXT, note TEXT, doctor_quote TEXT, patient_understanding TEXT, source_document_id TEXT, revision INTEGER NOT NULL, ord INTEGER NOT NULL, PRIMARY KEY (profile_key, id));
 CREATE TABLE clinical_replies (id TEXT NOT NULL, profile_key TEXT NOT NULL, occurred_at TEXT NOT NULL, speaker TEXT NOT NULL, dept TEXT NOT NULL, quote TEXT NOT NULL, patient_understanding TEXT, related_question_id TEXT, ord INTEGER NOT NULL, PRIMARY KEY (profile_key, id));
 CREATE TABLE questions (id TEXT NOT NULL, profile_key TEXT NOT NULL, text TEXT NOT NULL, topic TEXT NOT NULL, is_private INTEGER NOT NULL, sort_order INTEGER NOT NULL, status TEXT NOT NULL, answer_reply_id TEXT, created_at TEXT NOT NULL, ord INTEGER NOT NULL, PRIMARY KEY (profile_key, id));
+CREATE TABLE nutrition_logs (id TEXT NOT NULL, profile_key TEXT NOT NULL, occurred_at TEXT NOT NULL, text TEXT NOT NULL, intake TEXT, weight_kg REAL, note TEXT, is_private INTEGER NOT NULL, ord INTEGER NOT NULL, PRIMARY KEY (profile_key, id));
+CREATE TABLE mind_logs (id TEXT NOT NULL, profile_key TEXT NOT NULL, occurred_at TEXT NOT NULL, text TEXT NOT NULL, mood TEXT, sleep TEXT, is_private INTEGER NOT NULL, note TEXT, ord INTEGER NOT NULL, PRIMARY KEY (profile_key, id));
+CREATE TABLE profile_docs (profile_key TEXT PRIMARY KEY, definition TEXT NOT NULL, diagnosis_text TEXT NOT NULL, key_reports_json TEXT NOT NULL, care_team_json TEXT NOT NULL);
 CREATE TABLE visit_snapshots (id TEXT NOT NULL, profile_key TEXT NOT NULL, created_at TEXT NOT NULL, cutoff_at TEXT NOT NULL, format TEXT NOT NULL, item_ids_json TEXT NOT NULL, question_ids_json TEXT NOT NULL, review_states_json TEXT NOT NULL, relative_path TEXT NOT NULL, sha256 TEXT NOT NULL, stale INTEGER NOT NULL, ord INTEGER NOT NULL, PRIMARY KEY (profile_key, id));
 `
 
@@ -391,6 +435,20 @@ export function buildDemoDatabase(location = ':memory:') {
       is_private: q.isPrivate ? 1 : 0, sort_order: q.sortOrder, status: q.status,
       answer_reply_id: q.answerReplyId, created_at: q.createdAt, ord: q.ord,
     })))
+    insertMany(db, 'nutrition_logs', ['id', 'profile_key', 'occurred_at', 'text', 'intake', 'weight_kg', 'note', 'is_private', 'ord'], profile.nutrition.map((n) => ({
+      id: n.id, profile_key: profile.key, occurred_at: n.occurredAt, text: n.text,
+      intake: n.intake, weight_kg: n.weightKg, note: n.note, is_private: n.isPrivate ? 1 : 0, ord: n.ord,
+    })))
+    insertMany(db, 'mind_logs', ['id', 'profile_key', 'occurred_at', 'text', 'mood', 'sleep', 'is_private', 'note', 'ord'], profile.mind.map((m) => ({
+      id: m.id, profile_key: profile.key, occurred_at: m.occurredAt, text: m.text,
+      mood: m.mood, sleep: m.sleep, is_private: m.isPrivate ? 1 : 0, note: m.note, ord: m.ord,
+    })))
+    insertMany(db, 'profile_docs', ['profile_key', 'definition', 'diagnosis_text', 'key_reports_json', 'care_team_json'], [{
+      profile_key: profile.key, definition: profile.profileDoc.definition,
+      diagnosis_text: profile.profileDoc.diagnosisText,
+      key_reports_json: JSON.stringify(profile.profileDoc.keyReports),
+      care_team_json: JSON.stringify(profile.profileDoc.careTeam),
+    }])
     insertMany(db, 'visit_snapshots', ['id', 'profile_key', 'created_at', 'cutoff_at', 'format', 'item_ids_json', 'question_ids_json', 'review_states_json', 'relative_path', 'sha256', 'stale', 'ord'], profile.snapshots.map((s) => ({
       id: s.id, profile_key: profile.key, created_at: s.createdAt, cutoff_at: s.cutoffAt,
       format: s.format, item_ids_json: JSON.stringify(s.itemIds), question_ids_json: JSON.stringify(s.questionIds),
@@ -415,6 +473,9 @@ export function readDemoFromDatabase(db) {
     const medications = db.prepare('SELECT * FROM medication_events WHERE profile_key = ? ORDER BY rowid').all(key)
     const replies = db.prepare('SELECT * FROM clinical_replies WHERE profile_key = ? ORDER BY rowid').all(key)
     const questions = db.prepare('SELECT * FROM questions WHERE profile_key = ? ORDER BY rowid').all(key)
+    const nutrition = db.prepare('SELECT * FROM nutrition_logs WHERE profile_key = ? ORDER BY rowid').all(key)
+    const mind = db.prepare('SELECT * FROM mind_logs WHERE profile_key = ? ORDER BY rowid').all(key)
+    const profileDoc = db.prepare('SELECT * FROM profile_docs WHERE profile_key = ?').get(key)
     const snapshots = db.prepare('SELECT * FROM visit_snapshots WHERE profile_key = ? ORDER BY rowid').all(key)
     profiles[key] = {
       key,
@@ -472,6 +533,18 @@ export function readDemoFromDatabase(db) {
         sortOrder: q.sort_order, status: q.status, answerReplyId: q.answer_reply_id,
         createdAt: q.created_at, ord: q.ord,
       })),
+      nutrition: nutrition.map((n) => ({
+        id: n.id, occurredAt: n.occurred_at, text: n.text, intake: n.intake,
+        weightKg: n.weight_kg, note: n.note, isPrivate: Boolean(n.is_private), ord: n.ord,
+      })),
+      mind: mind.map((m) => ({
+        id: m.id, occurredAt: m.occurred_at, text: m.text, mood: m.mood,
+        sleep: m.sleep, isPrivate: Boolean(m.is_private), note: m.note, ord: m.ord,
+      })),
+      profileDoc: {
+        definition: profileDoc.definition, diagnosisText: profileDoc.diagnosis_text,
+        keyReports: JSON.parse(profileDoc.key_reports_json), careTeam: JSON.parse(profileDoc.care_team_json),
+      },
       snapshots: snapshots.map((s) => ({
         id: s.id, createdAt: s.created_at, cutoffAt: s.cutoff_at, format: s.format,
         itemIds: JSON.parse(s.item_ids_json), questionIds: JSON.parse(s.question_ids_json),

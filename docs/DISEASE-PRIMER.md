@@ -2,7 +2,7 @@
 
 状态：M1 公共资料草案，未经独立临床审核，G1 未签。四段与 README/`primer-data.js` 同源；原型和链接点击待 M2。
 
-- 项目 / 品牌：小 X 宝（暂定名）
+- 项目 / 品牌：小炎宝（暂定名）
 - 病种：成人斯蒂尔病（Adult-onset Still's disease, AOSD）
 - 更新：2026-10-27
 - 本地原件：`assets/guidebooks/nhc-86-rare-diseases-2025.pdf#page=21`

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>小X宝 · 成人斯蒂尔病工作台（原型 v0.2）</title>
+<title>小炎宝 · 成人斯蒂尔病工作台（原型 v0.2）</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="primer.css">
 <link rel="stylesheet" href="style.css">
@@ -12,10 +12,19 @@
 <div class="app" id="app">
   <header class="topbar" id="topbar">
     <div class="brand">
-      <span class="brand-mark" aria-hidden="true">✿</span>
-      <span class="brand-name">小X宝</span>
-      <span class="brand-sub">成人斯蒂尔病工作台</span>
-      <span class="ver-chip" id="ver-chip">v0.2.0-prototype</span>
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 40 40" width="30" height="30" role="img" aria-label="小炎宝标志">
+          <defs><linearGradient id="flameGrad" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0" stop-color="#1f6b52"/><stop offset="1" stop-color="#57a37f"/>
+          </linearGradient></defs>
+          <path d="M20 4c4 6 2 9 5 12 3 3 7 5 7 11a12 12 0 0 1-24 0c0-5 3-8 6-11 2 3 4 2 4 0 0-4 1-8 2-12Z" fill="url(#flameGrad)"/>
+          <circle cx="20" cy="25" r="6" fill="#f7f8f6"/>
+          <path d="M17 25c0-2 1.6-4 3-5 1.4 1 3 3 3 5a3 3 0 0 1-6 0Z" fill="#1f6b52"/>
+        </svg>
+      </span>
+      <span class="brand-name">小炎宝</span>
+      <span class="brand-sub">FlamePal · 成人斯蒂尔病工作台</span>
+      <span class="ver-chip" id="ver-chip">v0.3.0-prototype</span>
     </div>
     <p class="topbar-note" id="topbar-note">记录有来源，判断交给医生。</p>
     <div class="top-actions">
@@ -50,7 +59,7 @@
 
   <footer class="footer">
     <span>合成演示数据 · 不含真实患者信息 · 不提供诊断或治疗建议</span>
-    <span class="footer-right"><span id="foot-version">v0.2.0-prototype</span> · 演示生成 <span id="foot-date">2026-10-27</span></span>
+    <span class="footer-right"><span id="foot-version">v0.3.0-prototype</span> · 演示生成 <span id="foot-date">2026-10-27</span></span>
   </footer>
 </div>
 

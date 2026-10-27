@@ -76,7 +76,14 @@ test('三类叙述、授权默认与私密记录可区分', () => {
 })
 
 test('候选拒收不进入观察值；未解析文档无确认指标', () => {
-  assert.equal(data.profiles.A.candidates.length, 0)
+  /* 断言的是规则而不是固定条数：任何候选（含拒收/待核对）都不直接等于观察值。 */
+  for (const profile of Object.values(data.profiles)) {
+    const observationIds = new Set(profile.observations.map((o) => o.id))
+    for (const candidate of profile.candidates) {
+      assert.ok(!observationIds.has(candidate.id), `候选不应直接进入观察值：${candidate.id}`)
+    }
+  }
+  assert.ok(data.profiles.A.candidates.some((c) => c.decision === 'pending'))
   assert.equal(data.profiles.B.candidates.filter((c) => c.decision === 'rejected').length, 1)
   const unparsed = data.profiles.B.documents.find((d) => d.reviewState === 'unverified')
   assert.ok(unparsed)

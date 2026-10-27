@@ -526,7 +526,38 @@ window.DEMO_DATA = {
           "sha256": "48b1dedc78f2634cbb0fed183c8040323576898c9b9e76fcfe82b988597439d8"
         }
       ],
-      "candidates": [],
+      "candidates": [
+        {
+          "id": "c-A-01",
+          "documentId": "A-doc-lab-2026-10-19",
+          "fieldName": "C 反应蛋白",
+          "rawText": "5",
+          "valueText": "5",
+          "valueNum": 5,
+          "unit": "mg/L",
+          "refLow": 0,
+          "refHigh": 8,
+          "collectedAt": "2026-10-19",
+          "decision": "pending",
+          "note": "待逐项核对；未入事实。",
+          "ord": 1
+        },
+        {
+          "id": "c-A-02",
+          "documentId": "A-doc-lab-2026-10-19",
+          "fieldName": "铁蛋白",
+          "rawText": "170",
+          "valueText": "170",
+          "valueNum": 170,
+          "unit": "ng/mL",
+          "refLow": 15,
+          "refHigh": 150,
+          "collectedAt": "2026-10-19",
+          "decision": "pending",
+          "note": "待逐项核对；未入事实。",
+          "ord": 2
+        }
+      ],
       "metrics": [
         {
           "id": "crp",
@@ -2050,6 +2081,121 @@ window.DEMO_DATA = {
           "ord": 11
         }
       ],
+      "nutrition": [
+        {
+          "id": "nut-A-01",
+          "occurredAt": "2026-05-13",
+          "text": "这两天胃口差，只吃了半碗粥。",
+          "intake": "半碗粥",
+          "weightKg": null,
+          "note": "发热期间记录",
+          "isPrivate": false,
+          "ord": 1
+        },
+        {
+          "id": "nut-A-02",
+          "occurredAt": "2026-06-02",
+          "text": "下午特别累，午饭没吃，晚上补了一小碗面。",
+          "intake": "一小碗面",
+          "weightKg": null,
+          "note": null,
+          "isPrivate": false,
+          "ord": 2
+        },
+        {
+          "id": "nut-A-03",
+          "occurredAt": "2026-07-11",
+          "text": "家人说这两天吃得少。",
+          "intake": "少于平时",
+          "weightKg": null,
+          "note": "家属观察",
+          "isPrivate": false,
+          "ord": 3
+        },
+        {
+          "id": "nut-A-04",
+          "occurredAt": "2026-08-20",
+          "text": "激素后容易饿，夜里加了一次水果。",
+          "intake": "水果一份",
+          "weightKg": 52.4,
+          "note": "体重为家用秤自测",
+          "isPrivate": false,
+          "ord": 4
+        },
+        {
+          "id": "nut-A-05",
+          "occurredAt": "2026-09-18",
+          "text": "胃口比上个月好，能吃完一份午饭。",
+          "intake": "一份午饭",
+          "weightKg": 53.1,
+          "note": null,
+          "isPrivate": false,
+          "ord": 5
+        },
+        {
+          "id": "nut-A-06",
+          "occurredAt": "2026-10-15",
+          "text": "早上恶心，只喝了豆浆。",
+          "intake": "豆浆一杯",
+          "weightKg": 52.8,
+          "note": null,
+          "isPrivate": false,
+          "ord": 6
+        }
+      ],
+      "mind": [
+        {
+          "id": "mind-A-01",
+          "occurredAt": "2026-06-10",
+          "text": "担心长期吃激素，脸变圆，不想见朋友。",
+          "mood": "低落",
+          "sleep": "入睡难",
+          "isPrivate": true,
+          "note": "默认私密，不导出、不发送 AI",
+          "ord": 1
+        },
+        {
+          "id": "mind-A-02",
+          "occurredAt": "2026-08-03",
+          "text": "照镜子会烦，但今天愿意出门走一圈。",
+          "mood": "复杂",
+          "sleep": "尚可",
+          "isPrivate": true,
+          "note": null,
+          "ord": 2
+        },
+        {
+          "id": "mind-A-03",
+          "occurredAt": "2026-09-22",
+          "text": "和妈妈聊了复查的事，心里踏实一点。",
+          "mood": "平稳",
+          "sleep": "尚可",
+          "isPrivate": false,
+          "note": "患者选择可让家属看到",
+          "ord": 3
+        },
+        {
+          "id": "mind-A-04",
+          "occurredAt": "2026-10-12",
+          "text": "工作请假多了，怕同事问。",
+          "mood": "焦虑",
+          "sleep": "一般",
+          "isPrivate": true,
+          "note": null,
+          "ord": 4
+        }
+      ],
+      "profileDoc": {
+        "definition": "成人斯蒂尔病是一种罕见、病因不明的自身炎症性疾病。",
+        "diagnosisText": "医生记录：成人斯蒂尔病（2026-05，首次风湿免疫科门诊）。",
+        "keyReports": [
+          "A-doc-lab-2026-05-04",
+          "A-doc-note-2026-10-09"
+        ],
+        "careTeam": [
+          "演示医院 · 风湿免疫科"
+        ]
+      },
       "replies": [
         {
           "id": "r-A-01",
@@ -3530,6 +3676,102 @@ window.DEMO_DATA = {
           "ord": 5
         }
       ],
+      "nutrition": [
+        {
+          "id": "nut-B-01",
+          "occurredAt": "2026-05-25",
+          "text": "早上吃药后胃不舒服，吃了点苏打饼干。",
+          "intake": "苏打饼干",
+          "weightKg": null,
+          "note": null,
+          "isPrivate": false,
+          "ord": 1
+        },
+        {
+          "id": "nut-B-02",
+          "occurredAt": "2026-06-20",
+          "text": "出差在外，三餐不规律。",
+          "intake": "不规律",
+          "weightKg": null,
+          "note": null,
+          "isPrivate": false,
+          "ord": 2
+        },
+        {
+          "id": "nut-B-03",
+          "occurredAt": "2026-08-01",
+          "text": "这周应酬多，酒没喝。",
+          "intake": "正常",
+          "weightKg": null,
+          "note": "患者自述",
+          "isPrivate": false,
+          "ord": 3
+        },
+        {
+          "id": "nut-B-04",
+          "occurredAt": "2026-09-15",
+          "text": "关节疼时不想做饭，叫了两次外卖。",
+          "intake": "外卖",
+          "weightKg": null,
+          "note": null,
+          "isPrivate": false,
+          "ord": 4
+        },
+        {
+          "id": "nut-B-05",
+          "occurredAt": "2026-10-10",
+          "text": "体重比上次门诊轻了一点。",
+          "intake": "正常",
+          "weightKg": 70.2,
+          "note": "家用秤自测",
+          "isPrivate": false,
+          "ord": 5
+        }
+      ],
+      "mind": [
+        {
+          "id": "mind-B-01",
+          "occurredAt": "2026-07-02",
+          "text": "担心长期吃药影响肝功能。",
+          "mood": "担心",
+          "sleep": "一般",
+          "isPrivate": true,
+          "note": "默认私密",
+          "ord": 1
+        },
+        {
+          "id": "mind-B-02",
+          "occurredAt": "2026-08-20",
+          "text": "出差多，怕在外地发作没人帮忙。",
+          "mood": "焦虑",
+          "sleep": "入睡难",
+          "isPrivate": true,
+          "note": null,
+          "ord": 2
+        },
+        {
+          "id": "mind-B-03",
+          "occurredAt": "2026-10-05",
+          "text": "和配偶说了工作上的担心，感觉好一些。",
+          "mood": "平稳",
+          "sleep": "尚可",
+          "isPrivate": false,
+          "note": null,
+          "ord": 3
+        }
+      ],
+      "profileDoc": {
+        "definition": "成人斯蒂尔病是一种罕见、病因不明的自身炎症性疾病。",
+        "diagnosisText": "医生记录：成人斯蒂尔病（2026-05，首次风湿免疫科门诊）。",
+        "keyReports": [
+          "B-doc-lab-2026-05-19",
+          "B-doc-us-2026-05-21"
+        ],
+        "careTeam": [
+          "演示市第一医院 · 风湿科",
+          "演示医院 · 风湿免疫科"
+        ]
+      },
       "replies": [
         {
           "id": "r-B-01",

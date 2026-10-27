@@ -22,14 +22,17 @@
     ['dashboard', '看板', 'home'],
     ['voices', '本人与代记', 'voice'],
     ['day', '同日经过', 'day'],
-    ['documents', '报告与核对', 'doc'],
-    ['metrics', '指标回看', 'table'],
-    ['medications', '用药与医嘱', 'pill'],
+    ['documents', '资料上传与核对', 'doc'],
+    ['metrics', '检查与指标', 'table'],
+    ['timeline', '病情一图秀', 'chart'],
+    ['treatment', '治疗与临床', 'pill'],
+    ['nutrition', '营养支持', 'leaf'],
+    ['mind', '心理支持', 'heart'],
     ['visit', '复诊准备', 'clipboard'],
     ['resources', '疾病与资源', 'book'],
   ]
   /* 全量探针据此逐页渲染；加页必须同时更新探针，避免“探针没扫到却全绿”。 */
-  const ROUTES = ['dashboard', 'voices', 'day', 'documents', 'metrics', 'medications', 'visit', 'resources']
+  const ROUTES = ['dashboard', 'voices', 'day', 'documents', 'metrics', 'timeline', 'treatment', 'nutrition', 'mind', 'visit', 'resources']
   const ICONS = {
     home: '<path d="M4 10.5 12 4l8 6.5V20H4z"/>',
     voice: '<path d="M4 5h16v10H9l-5 4z"/>',
@@ -39,6 +42,9 @@
     pill: '<path d="M7 7h10a5 5 0 0 1 0 10H7A5 5 0 0 1 7 7Zm0 5h10"/>',
     clipboard: '<path d="M8 4h8v3H8zM6 6h12v14H6zM9 12h6M9 16h4"/>',
     book: '<path d="M5 4h6a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H5zM19 4h-4a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h4z"/>',
+    leaf: '<path d="M5 19c0-8 6-14 14-14 0 8-6 14-14 14Zm0 0 7-7"/>',
+    heart: '<path d="M20 6c-3-3-6-1-8 1-2-2-5-4-8-1-5 5 8 14 8 14s13-9 8-14Z"/>',
+    chart: '<path d="M4 20V4M4 20h16M8 16l3-5 3 3 4-7"/>',
   }
   const icon = (key) => `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[key] || ICONS.home}</svg>`
 
@@ -250,27 +256,230 @@
     </div>`
   }
 
-  /* ---------------- 用药与医嘱 ---------------- */
-  function viewMedications() {
+  /* ---------------- 资料上传与核对（四步闭环） ---------------- */
+  function viewDocuments() {
     const p = P()
+    const pending = p.candidates.filter((c) => c.decision === 'pending')
+    const rejected = p.candidates.filter((c) => c.decision === 'rejected')
+    const unverified = p.documents.filter((d) => d.reviewState === 'unverified')
+    const steps = [
+      ['1', '上传', '选择 PDF/照片或手工补录；文件只留在本机'],
+      ['2', '解析', '逐页识别成候选，失败保留原件、不产生候选'],
+      ['3', '确认', '逐项核对名称/数值/单位/日期，可改可拒收'],
+      ['4', '导入', '确认后的原值进入检查与指标；候选本身不入事实'],
+    ]
+    return `${profileSwitcher()}
+    ${pageHead('资料上传与核对', '一份报告从上传到进入记录要走四步；任何一步失败都不伪造结果。', agentButton('documents'))}
+    <div class="steps">${steps.map(([n, t, d]) => `<div class="step"><b>${n}</b><strong>${esc(t)}</strong><span>${esc(d)}</span></div>`).join('')}</div>
+    <div class="grid">
+      <section class="card">
+        <h2>资料库</h2>
+        <div class="btn-row" style="margin:0 0 10px">
+          <button type="button" class="primary" data-action="upload">上传一份报告（演示）</button>
+          <button type="button" class="ghost" data-action="manual">手工补一项</button>
+          <button type="button" class="ghost" data-action="manual">手工记一段</button>
+        </div>
+        <div class="list">${p.documents.map((d) => `<div class="item"><div class="when">${esc(d.collectedAt)}</div><div class="what"><a href="#" class="linkish" data-doc="${esc(d.id)}">${esc(d.title)}</a>
+          <p class="meta-line">${esc(d.org)} · ${esc(d.docType)} ${reviewPill(d.reviewState)}${d.reviewState === 'unverified' ? ' · 只有原件' : ''}</p></div></div>`).join('')}</div>
+      </section>
+      <section class="card">
+        <h2>待确认候选（${pending.length}）</h2>
+        ${pending.length ? pending.map((c) => `<div class="check"><input type="checkbox" aria-label="选择 ${esc(c.fieldName)}"><div><strong>${esc(c.fieldName)}</strong> <span class="meta-line">原文 ${esc(c.rawText)} ${esc(c.unit || '（单位未印）')} · ${esc(c.collectedAt)}</span><p class="meta-line">${esc(c.note)}</p></div></div>`).join('') : '<div class="empty">这个档案没有待确认候选。原件都已在资料库登记。</div>'}
+        ${pending.length ? '<div class="btn-row"><button type="button" class="ghost" disabled>确认所选（原型未接写入）</button><button type="button" class="ghost" disabled>拒收所选</button></div>' : ''}
+        ${rejected.length ? `<h3 style="margin-top:14px">已拒收（${rejected.length}）</h3>${rejected.map((c) => `<p class="meta-line">${esc(c.fieldName)}：${esc(c.note)}</p>`).join('')}` : ''}
+        ${unverified.length ? `<h3 style="margin-top:14px">只有原件、未解析（${unverified.length}）</h3>${unverified.map((d) => `<p class="meta-line">${esc(d.title)} · ${esc(d.collectedAt)} · 不产生指标值</p>`).join('')}` : ''}
+      </section>
+    </div>
+    <div class="banner warm" style="margin-top:14px">云解析只在用户显式选择文件并同意外发后发生；失败保留原件、不产生候选。原型没有接入云端，候选均为合成示例。</div>`
+  }
+
+  /* ---------------- 检查与指标（原值表 + 动态卡） ---------------- */
+  function metricSeries(p, metricId) {
+    return p.observations
+      .filter((o) => o.metricId === metricId && o.valueNum != null)
+      .sort((a, b) => a.collectedAt.localeCompare(b.collectedAt))
+  }
+
+  function miniSparkline(values, w = 150, h = 42) {
+    if (values.length < 2) return '<span class="meta-line">单次记录，暂不连线</span>'
+    const lo = Math.min(...values), hi = Math.max(...values)
+    const span = hi - lo || Math.max(Math.abs(hi) * 0.08, 1)
+    const pts = values.map((v, i) => [i / (values.length - 1) * (w - 8) + 4, h - 6 - ((v - lo) / span) * (h - 14)])
+    const d = monotonePath(pts)
+    return `<svg class="spark" viewBox="0 0 ${w} ${h}" role="img" aria-label="最近 ${values.length} 次记录的趋势，按自身范围缩放"><path d="${d}"/></svg>`
+  }
+
+  function monotonePath(pts) {
+    if (pts.length < 2) return ''
+    const n = pts.length
+    const dx = [], dy = [], m = []
+    for (let i = 0; i < n - 1; i++) { dx[i] = pts[i + 1][0] - pts[i][0]; dy[i] = pts[i + 1][1] - pts[i][1]; m[i] = dy[i] / (dx[i] || 1) }
+    const tang = []
+    tang[0] = m[0]
+    for (let i = 1; i < n - 1; i++) tang[i] = (m[i - 1] * m[i] <= 0) ? 0 : (m[i - 1] + m[i]) / 2
+    tang[n - 1] = m[n - 2]
+    for (let i = 0; i < n - 1; i++) {
+      if (m[i] === 0) { tang[i] = 0; tang[i + 1] = 0; continue }
+      const a = tang[i] / m[i], b = tang[i + 1] / m[i]
+      const s = Math.hypot(a, b)
+      if (s > 3) { tang[i] = 3 * m[i] * a / s; tang[i + 1] = 3 * m[i] * b / s }
+    }
+    let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`
+    for (let i = 0; i < n - 1; i++) {
+      const h = dx[i] / 3
+      d += ` C${(pts[i][0] + h).toFixed(1)},${(pts[i][1] + tang[i] * h).toFixed(1)} ${(pts[i + 1][0] - h).toFixed(1)},${(pts[i + 1][1] - tang[i + 1] * h).toFixed(1)} ${pts[i + 1][0].toFixed(1)},${pts[i + 1][1].toFixed(1)}`
+    }
+    return d
+  }
+
+  function metricCards() {
+    const p = P()
+    const numeric = p.metrics.filter((m) => m.kind === 'numeric')
+    return numeric.map((m) => {
+      const series = metricSeries(p, m.id)
+      if (!series.length) return ''
+      const latest = series[series.length - 1]
+      const prev = series[series.length - 2]
+      const delta = prev ? latest.valueNum - prev.valueNum : null
+      return `<button type="button" class="mcard" data-metric="${esc(m.id)}" aria-pressed="false">
+        <span class="mcard-inner">
+          <span class="mface front">
+            <span class="mname">${esc(m.name)}</span>
+            <span class="mval">${esc(latest.rawText)} <em>${esc(m.unit || '')}</em></span>
+            <span class="mmeta">${esc(latest.collectedAt)} · ${series.length} 次${delta == null ? '' : ' · 较上次 ' + (delta > 0 ? '+' : '−') + Math.abs(delta).toFixed(m.decimals || 0)}</span>
+            <span class="mturn">翻面看趋势</span>
+          </span>
+          <span class="mface back" aria-hidden="true">
+            ${miniSparkline(series.map((o) => o.valueNum))}
+            <span class="mmeta">${esc(series[0].collectedAt)} → ${esc(latest.collectedAt)}</span>
+            <span class="mmeta">按该指标自身范围缩放，不代表与其他指标可比，也不是正常范围。</span>
+          </span>
+        </span>
+      </button>`
+    }).join('')
+  }
+
+  function viewMetrics() {
+    const p = P()
+    const qual = p.metrics.filter((m) => m.kind === 'qual')
+    return `${profileSwitcher()}
+    ${pageHead('检查与指标', '每张报告的原值、单位和日期都能回源；卡片翻面只显示该指标自身变化，不做病情判断。', agentButton('metrics'))}
+    <section class="card" style="margin-bottom:14px"><h2>指标动态卡</h2><p class="sub">点击卡片翻面；每条线按自身全期范围缩放。</p>
+      <div class="mcards">${metricCards()}</div>
+    </section>
+    <div class="grid">
+      <section class="card"><h2>原报告值表</h2>${metricTable()}</section>
+      <section class="card"><h2>自述分类（不进入数值序列）</h2>
+        ${qual.map((m) => `<h3>${esc(m.name)}</h3><div class="list">${p.observations.filter((o) => o.metricId === m.id).map((o) => `<div class="item"><div class="when">${esc(o.collectedAt)}</div><div class="what"><p>${esc(o.rawText)}</p></div></div>`).join('') || EMPTY}</div><p class="meta-line">${esc(m.note)}</p>`).join('')}
+      </section>
+    </div>`
+  }
+
+  /* ---------------- 病情一图秀 ---------------- */
+  function viewTimeline() {
+    const p = P()
+    return `${profileSwitcher()}
+    ${pageHead('病情一图秀', '同一时间轴上看到复查、用药和感受；每条线按自身范围绘制，互不比较。', agentButton('timeline'))}
+    <section class="card"><div class="chart-wrap"><svg class="chart" id="timeline-chart" viewBox="0 0 1080 420" role="img" aria-label="多指标时间轴，每条线按自身范围缩放"></svg></div>
+      <div class="legend" id="timeline-legend"></div>
+      <p class="meta-line">说明：每条线按该指标全部记录的 min–max 缩放；单次记录不连线；曲线之间的高低不代表谁更严重。</p>
+    </section>`
+  }
+
+  /* ---------------- 治疗与临床（严格按 36 号四段，与 README/概要同源） ---------------- */
+  function primerSectionHtml(sec) {
+    if (!sec) return ''
+    const sources = (sec.sources || []).map((src) => {
+      const bits = [src.org, src.doc, src.version].filter(Boolean).join(' · ')
+      let link = ''
+      if (src.nolink) link = '未取得官方说明书'
+      else if (src.local) link = `<a href="${esc(src.local)}" target="_blank" rel="noopener">本地阅读 ↗</a>`
+      else if (/^https:\/\//.test(src.url || '')) link = `<a href="${esc(src.url)}" target="_blank" rel="noopener noreferrer">打开 ↗</a>`
+      return `${esc(bits)}${src.page ? ' · ' + esc(src.page) : ''}${link ? ' · ' + link : ''}`
+    }).join('<br>')
+    return `<div class="primer-block">
+      <p class="lead">${esc(sec.intro || '')}</p>
+      ${sec.points ? `<ul class="tight">${sec.points.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+      ${sec.groups ? sec.groups.map((g) => `<h4>${esc(g.label)}</h4><ul class="tight">${g.points.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`).join('') : ''}
+      ${sec.table ? `<div class="table-wrap"><table class="data"><thead><tr>${sec.table.head.map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${sec.table.rows.map((row) => `<tr>${row.map((c) => `<td>${c && typeof c === 'object' ? esc(c.text || '') : esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : ''}
+      <p class="src">来源：${sources || '未标注'}</p>
+    </div>`
+  }
+
+  function viewTreatment() {
+    const p = P()
+    const doc = p.profileDoc
+    const primer = window.DISEASE_PRIMER || { sections: [] }
+    const byId = Object.fromEntries((primer.sections || []).map((x) => [x.id, x]))
     const planned = p.medications.filter((m) => m.eventKind === 'planned')
     const actual = p.medications.filter((m) => m.eventKind === 'actual')
     return `${profileSwitcher()}
-    ${pageHead('用药与医嘱', '计划、实际事件、医生原话和患者自己的理解分开记录；不生成治疗线、剂量调整或疗效判断。', agentButton('medications'))}
+    ${pageHead('治疗与临床', '公共资料四段与 README/「?」同源；下面只记录本档案的原始材料。', agentButton('treatment'))}
     <div class="grid">
-      <section class="card"><h2>医嘱与计划（${planned.length}）</h2>
+      <section class="card">
+        <h2>① 定义</h2>${primerSectionHtml(byId.definition)}
+        <h2 style="margin-top:14px">② 医学资料规范和指南情况</h2>${primerSectionHtml(byId.evidence)}
+        <h2 style="margin-top:14px">③ 目前治疗全景概要</h2>
+        ${primerSectionHtml(byId.landscape)}
+        <p class="exit-line">以上是文献与指南里列出的类别，不代表任何一项适合你。选哪一个，这一句需要问你的医生。</p>
+        <h2 style="margin-top:14px">④ 发展趋势</h2>${primerSectionHtml(byId.trend)}
+      </section>
+      <section class="card">
+        <h2>本档医生记录</h2>
+        <p>${esc(doc.diagnosisText)}</p>
+        <h3 style="margin-top:12px">关键原件</h3>
+        <div class="list">${doc.keyReports.map((id) => { const d = p.documents.find((x) => x.id === id); return d ? `<div class="item"><div class="what"><a href="#" class="linkish" data-doc="${esc(id)}">${esc(d.title)}</a><p class="meta-line">${esc(d.collectedAt)} · ${esc(d.org)}</p></div></div>` : '' }).join('')}</div>
+        <h3 style="margin-top:12px">就诊团队</h3><p class="meta-line">${doc.careTeam.map(esc).join(' · ')}</p>
+        <h3 style="margin-top:12px">我的用药与医嘱（${planned.length} 条计划 / ${actual.length} 次实际）</h3>
         ${planned.map((m) => `<details class="fold"><summary>${esc(m.drugName)} · ${esc(m.doseText)} · ${esc(m.startedOn)} 起</summary>
           <div class="fold-body"><div class="fold-grid">
             <div><h4>医生原话</h4><p class="quote">${m.doctorQuote ? '“' + esc(m.doctorQuote) + '”' : '未记录原文'}</p></div>
             <div><h4>患者理解</h4><p>${m.patientUnderstanding ? esc(m.patientUnderstanding) : '未记录'}</p></div>
-            <div><h4>来源</h4><p class="meta-line">${esc(m.sourceDocumentId || '手录')}</p></div>
-            <div><h4>说明</h4><p class="meta-line">${esc(m.note)}</p></div>
           </div></div></details>`).join('')}
       </section>
-      <section class="card"><h2>实际用药事件（${actual.length}）</h2>
-        <div class="list">${actual.map((m) => `<div class="item"><div class="when">${esc(m.startedOn)}</div><div class="what"><p>${esc(m.drugName)} · ${esc(m.doseText)}</p></div></div>`).join('') || EMPTY}</div>
-        <h3 style="margin-top:14px">医生答复原文</h3>
-        <div class="list">${p.replies.map((r) => `<div class="item"><div class="when">${esc(r.occurredAt)}</div><div class="what"><p class="quote">“${esc(r.quote)}”</p><p class="meta-line">${esc(r.dept)} · ${esc(r.speaker)}${r.patientUnderstanding ? ' · 患者理解：' + esc(r.patientUnderstanding) : ''}</p></div></div>`).join('')}</div>
+    </div>
+    <section class="card" style="margin-top:14px">
+      <h2>医生答复原文</h2>
+      <div class="list">${p.replies.map((r) => `<div class="item"><div class="when">${esc(r.occurredAt)}</div><div class="what"><p class="quote">“${esc(r.quote)}”</p><p class="meta-line">${esc(r.dept)} · ${esc(r.speaker)}${r.patientUnderstanding ? ' · 患者理解：' + esc(r.patientUnderstanding) : ''}</p></div></div>`).join('')}</div>
+    </section>`
+  }
+
+  /* ---------------- 营养支持 ---------------- */
+  function viewNutrition() {
+    const p = P()
+    const weights = p.nutrition.filter((n) => n.weightKg != null)
+    return `${profileSwitcher()}
+    ${pageHead('营养支持', '记录吃了什么、胃口和体重；不提供食谱、热量目标或补剂处方。', agentButton('nutrition'))}
+    <div class="grid">
+      <section class="card"><h2>进食与胃口</h2>
+        <div class="list">${p.nutrition.map((n) => `<div class="item"><div class="when">${esc(n.occurredAt)}</div><div class="what"><p>${esc(n.text)}</p><p class="meta-line">进食：${esc(n.intake || '未记录')}${n.note ? ' · ' + esc(n.note) : ''}</p></div></div>`).join('') || EMPTY}</div>
+        <div class="btn-row"><button type="button" class="ghost" disabled>记一次进食（原型未接通）</button></div>
+      </section>
+      <section class="card"><h2>体重记录（家用秤自测）</h2>
+        ${weights.length ? `<div class="table-wrap"><table class="data"><thead><tr><th>日期</th><th>体重</th><th>来源</th></tr></thead><tbody>${weights.map((n) => `<tr><td>${esc(n.occurredAt)}</td><td class="num">${esc(n.weightKg)} kg</td><td>${esc(n.note || '自测')}</td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">还没有体重记录。</div>'}
+        <p class="meta-line">体重变化不等于病情变化；如持续下降或进食困难，请与医生/营养师讨论。</p>
+        <h2 style="margin-top:14px">医生/营养师书面意见</h2>
+        <p class="meta-line">本档案尚未记录书面营养意见。公共资料只说明“记录原有饮食与医生意见”，不生成处方。</p>
+      </section>
+    </div>`
+  }
+
+  /* ---------------- 心理支持 ---------------- */
+  function viewMind() {
+    const p = P()
+    const visible = p.mind.filter((m) => !m.isPrivate)
+    const privateCount = p.mind.length - visible.length
+    return `${profileSwitcher()}
+    ${pageHead('心理支持', '情绪与生活影响可以自愿记录；默认私密，不做评分或诊断。', agentButton('mind'))}
+    <div class="banner soft">本页 ${p.mind.length} 条记录中 ${privateCount} 条为私密，默认不进导出、不发送 AI；下方只显示非私密内容。</div>
+    <div class="grid">
+      <section class="card"><h2>我的记录（非私密）</h2>
+        <div class="list">${visible.map((m) => `<div class="item"><div class="when">${esc(m.occurredAt)}</div><div class="what"><p>${esc(m.text)}</p><p class="meta-line">情绪：${esc(m.mood || '未记')} · 睡眠：${esc(m.sleep || '未记')}</p></div></div>`).join('') || EMPTY}</div>
+        <div class="btn-row"><button type="button" class="ghost" disabled>记一条（私密，原型未接通）</button></div>
+      </section>
+      <section class="card"><h2>专业支持</h2>
+        <p class="meta-line">本页不提供心理诊断或危机干预。若情绪持续影响生活，可向风湿免疫科团队说明，或寻求当地正规心理/精神卫生服务。</p>
+        <p class="meta-line">工具不能判断急症；如有紧急或迅速加重的不适，请立即按当地急救/医疗机构渠道求助。</p>
       </section>
     </div>`
   }
@@ -406,11 +615,14 @@
     day: viewDay,
     documents: viewDocuments,
     metrics: viewMetrics,
-    medications: viewMedications,
+    timeline: viewTimeline,
+    treatment: viewTreatment,
+    nutrition: viewNutrition,
+    mind: viewMind,
     visit: viewVisit,
     resources: viewResources,
   }
-  const TITLES = { dashboard: '看板', voices: '本人与代记', day: '同日经过', documents: '报告与核对', metrics: '指标回看', medications: '用药与医嘱', visit: '复诊准备', resources: '疾病与资源' }
+  const TITLES = { dashboard: '看板', voices: '本人与代记', day: '同日经过', documents: '资料上传与核对', metrics: '检查与指标', timeline: '病情一图秀', treatment: '治疗与临床', nutrition: '营养支持', mind: '心理支持', visit: '复诊准备', resources: '疾病与资源' }
 
   function renderNav() {
     document.getElementById('nav').innerHTML = PAGES.map(([key, label, ic]) =>
@@ -422,6 +634,78 @@
     document.getElementById('main').innerHTML = (VIEWS[state.view] || viewDashboard)()
     document.getElementById('topbar-note').textContent = '记录有来源，判断交给医生。'
     document.getElementById('agent-state').textContent = state.agentOpen ? '演示 · 未连接宿主' : '演示 · 未连接宿主'
+    bindMetricCards()
+    if (state.view === 'timeline') {
+      paintTimeline()
+      requestAnimationFrame(() => paintTimeline())
+    }
+  }
+
+  function paintTimeline() {
+    const p = P()
+    const svg = document.getElementById('timeline-chart')
+    if (!svg) return
+    const chosen = ['crp', 'esr', 'ferritin', 'hgb']
+    const series = chosen
+      .map((id) => ({ metric: p.metrics.find((m) => m.id === id), obs: metricSeries(p, id) }))
+      .filter((s) => s.metric && s.obs.length)
+    const dates = [...new Set(series.flatMap((s) => s.obs.map((o) => o.collectedAt)))].sort()
+    if (!dates.length || !series.length) {
+      svg.innerHTML = '<text x="490" y="210" text-anchor="middle" fill="#5f6f66">这个档案还没有足够的数值记录。</text>'
+      return
+    }
+    const t0 = new Date(dates[0] + 'T00:00:00').getTime()
+    const t1 = new Date(dates[dates.length - 1] + 'T00:00:00').getTime()
+    const CW = 1080, CH = 420, X0 = 62, X1 = 900, Y0 = 132, Y1 = 366
+    const x = (d) => X0 + (new Date(d + 'T00:00:00').getTime() - t0) / (t1 - t0 || 1) * (X1 - X0)
+    const colors = ['#1f6b52', '#8a4b22', '#28566f', '#8a3350']
+    const narrow = (svg.parentElement?.clientWidth || window.innerWidth) < 640
+    let out = ''
+    series.forEach((s, i) => {
+      const vals = s.obs.map((o) => o.valueNum)
+      const lo = Math.min(...vals), hi = Math.max(...vals)
+      const span = hi - lo || Math.max(Math.abs(hi) * 0.08, 1)
+      const y = (v) => Y1 - (v - lo) / span * (Y1 - Y0)
+      const pts = s.obs.map((o) => [x(o.collectedAt), y(o.valueNum)])
+      const d = pts.length > 1 ? monotonePath(pts) : ''
+      if (d) out += `<path d="${d}" fill="none" stroke="${colors[i % 4]}" stroke-width="2.2" pathLength="1"/>`
+      pts.forEach(([px, py], j) => {
+        out += `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="4" fill="${colors[i % 4]}"><title>${esc(s.metric.name)} ${esc(s.obs[j].rawText)} ${esc(s.metric.unit || '')} ${esc(s.obs[j].collectedAt)}</title></circle>`
+      })
+      const last = pts[pts.length - 1]
+      /* 宽屏：右侧独立列错行；窄屏：数值进图例，图内不画右列标签 */
+      if (!narrow) {
+        const labelY = 150 + i * 22
+        out += `<line x1="${last[0].toFixed(1)}" y1="${last[1].toFixed(1)}" x2="${(X1 + 8).toFixed(1)}" y2="${labelY.toFixed(1)}" stroke="${colors[i % 4]}" stroke-width="1" stroke-dasharray="2 3" opacity=".55"/>`
+        out += `<text x="${(X1 + 12).toFixed(1)}" y="${labelY.toFixed(1)}" text-anchor="start" font-size="12" fill="${colors[i % 4]}">${esc(s.metric.name)} ${esc(s.obs[s.obs.length - 1].rawText)} ${esc(s.metric.unit || '')}</text>`
+      }
+    })
+    dates.forEach((d) => {
+      const px = x(d)
+      out += `<line x1="${px}" y1="${Y0}" x2="${px}" y2="${Y1}" stroke="#dfe6e1" stroke-dasharray="3 4"/>`
+      if (dates.length <= 8 || d === dates[0] || d === dates[dates.length - 1]) {
+        out += `<text x="${px}" y="${Y1 + 24}" text-anchor="middle" font-size="11" fill="#5f6f66">${d.slice(5)}</text>`
+      }
+    })
+    out += `<line x1="${X0}" y1="${Y1}" x2="${X1}" y2="${Y1}" stroke="#dfe6e1"/>`
+    svg.innerHTML = out
+    const legend = document.getElementById('timeline-legend')
+    if (legend) legend.innerHTML = series.map((s, i) => {
+      const latest = s.obs[s.obs.length - 1]
+      const suffix = narrow ? ` · 最近 ${esc(latest.rawText)} ${esc(s.metric.unit || '')}` : ''
+      return `<span><i style="background:${colors[i % 4]}"></i>${esc(s.metric.name)}（${esc(s.metric.unit || '')}）${suffix}</span>`
+    }).join('')
+  }
+
+  function bindMetricCards() {
+    document.querySelectorAll('[data-metric]').forEach((card) => {
+      card.addEventListener('click', () => {
+        const on = card.getAttribute('aria-pressed') !== 'true'
+        card.setAttribute('aria-pressed', String(on))
+        const back = card.querySelector('.mface.back')
+        if (back) back.setAttribute('aria-hidden', String(!on))
+      })
+    })
   }
 
   function go(view) {
@@ -443,6 +727,22 @@
     if (state.agentOpen) openAgent()
   }
 
+  function notify(text) {
+    let bar = document.getElementById('toast')
+    if (!bar) {
+      bar = document.createElement('div')
+      bar.id = 'toast'
+      bar.className = 'toast'
+      bar.setAttribute('role', 'status')
+      bar.setAttribute('aria-live', 'polite')
+      document.body.appendChild(bar)
+    }
+    bar.textContent = text
+    bar.hidden = false
+    clearTimeout(notify.timer)
+    notify.timer = setTimeout(() => { bar.hidden = true }, 4200)
+  }
+
   function bind() {
     document.addEventListener('click', (event) => {
       const target = event.target.closest('[data-view],[data-profile],[data-action],[data-doc],[data-discuss],[data-primer-open]')
@@ -454,6 +754,16 @@
       if (target.dataset.discuss) { event.preventDefault(); openAgent(); return }
       if (target.dataset.action === 'go') { event.preventDefault(); go(target.dataset.view || 'dashboard'); return }
       if (target.dataset.action === 'quick-record') { event.preventDefault(); go('voices'); return }
+      if (target.dataset.action === 'upload') {
+        event.preventDefault()
+        notify('演示：这里会打开文件选择；真实版本只在用户选文件后才发送云解析。本原型不读取任何文件。')
+        return
+      }
+      if (target.dataset.action === 'manual') {
+        event.preventDefault()
+        notify('演示：手工补录入口。真实版本保存到 config.root 的唯一事实库，本原型不写盘。')
+        return
+      }
     })
     document.getElementById('main').addEventListener('change', (event) => {
       if (event.target.id === 'day-select') {
@@ -517,7 +827,7 @@
     const m = /^#view=([a-z-]+)$/.exec(location.hash)
     if (m && VIEWS[m[1]]) state.view = m[1]
     render()
-    document.getElementById('foot-version').textContent = 'v0.2.0-prototype'
+    document.getElementById('foot-version').textContent = document.getElementById('ver-chip').textContent.trim()
     document.getElementById('foot-date').textContent = D.meta.generatedAt.slice(0, 10)
     syncTopbarHeight()
     window.addEventListener('resize', syncTopbarHeight)

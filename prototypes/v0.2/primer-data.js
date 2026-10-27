@@ -1,5 +1,5 @@
 window.DISEASE_PRIMER = {
-  brand: '小X宝',
+  brand: '小炎宝',
   name: '成人斯蒂尔病',
   en: "Adult-onset Still's disease（AOSD）",
   updated: '2026-10-27',
