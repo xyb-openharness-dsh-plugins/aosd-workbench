@@ -14,9 +14,10 @@
 | clinical_reply | reply_id / subject | 医生原话、说话者、日期、患者理解、来源、revision | 原话与理解不合并 |
 | candidate | candidate_id / document或任务 | 抽取类型、原值、结构化候选、逐项状态、模型/版本、失败 | AI/MinerU；拒收零副作用 |
 | metric_definition | metric_id | 名称、方法/机构/单位上下文、分类/数值类型 | 指标目录，不能替报告补单位 |
-| observation | observation_id / subject+metric+document | 原文值、可空数值、单位、参考上下限、日期、来源定位 | 确认记录派生；缺值为null |
-| question | question_id / subject | 问题、主题、私密、答复关联、状态 | 用户问题，不是医学结论 |
-| visit_snapshot | snapshot_id / subject | 已选事实或原件ID、每项review_state、数据截止、生成时间、导出hash、过时状态 | 可显式包含未核对材料但持续标注；历史不可静默改写 |
+| observation | observation_id / subject+metric+document | 报告原项目名、原文值、可空数值、原文单位、参考范围原文/上下限、`collected_at`与`reported_at`及各自 `time_precision`、机构、方法、原件定位、revision | 确认记录派生；缺值/日期/单位均为null，采样日不冒充报告日 |
+| question | question_id / subject | 问题、主题、私密、答复关联、`sort_order`、已问/未问状态、revision | 用户问题，不是医学结论；诊后答复关联原问题 |
+| authorization | authorization_id / subject | `grantor_id`、`grantee_id`、内容/出口范围、`granted_at`、`revoked_at`、revision；授权人必须为患者本人或经核实的合法授权主体 | 本人显式授权，AI不得生成/推断/确认；撤销追加留史 |
+| visit_snapshot | snapshot_id / subject | 所选对象ID+所选revision/原件hash、每项review_state、问题`sort_order`、`export_format`（简/详）、数据截止、生成时间、导出相对路径与hash、过时状态 | 可显式包含未核对材料但持续标注；源更正不改旧快照内容 |
 | public_resource | resource_id | 公共版本、URL/本地路径、地区、证据性质、核验日期、局限 | 与患者事实分离；未核实如实 |
 
 ## 2. 约束与读模型
@@ -29,7 +30,8 @@
 - `using` 保留字改用 `in_use`；复合主键裸查询 `ORDER BY rowid`；手写倒序只按 ord；分节标题 `section_titles`；分类指标不进入数值曲线。
 - 读模型：dashboard、day-view、metrics、visit-prep 共用已确认事实与 revision；快照含数据截止，不存整页任意 state。
 - `is_private`、`family_visible`、`export_allowed`、`ai_allowed` 四个默认值独立；敏感记录默认私密，家属/导出/AI默认排除。撤销只影响之后，不承诺召回已导出或已发送内容。
-- 未授权代记不得写入共享档案；受限本地草稿的存储/删除请求须 G3 与访谈另行决定，不得默认进看板、导出或 AI。
+- 未授权代记不得写入共享档案，**默认不持久化未授权草稿**；如未来允许受限草稿，必须另行明确授权主体、保存位置、删除和退出，不得默认进看板、导出或 AI。AI 不得生成、推断或确认授权。
+- 快照保存所选 revision/原件 hash，而不是仅对象ID；更正只让旧快照标过时，不改变其当时内容。手工允许导出未核对材料不自动扩展为AI发送许可。
 
 ## 3. 持久化与规模
 

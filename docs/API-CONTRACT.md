@@ -15,16 +15,17 @@
 | GET `/api/aosd/health` | 版本与骨架能力 | `{ok,version,apiVersion,capabilities}` | 宿主鉴权/405/503 | 🔧 已有，未真机 |
 | GET `/api/aosd/bootstrap` | 看板/设置/当前subject读模型 | 当前版本、最近记录、待核对与能力状态 | 未选目录仍给空态而非假就绪 | ⏳ |
 | GET `/api/aosd/day?date=YYYY-MM-DD` | 同日四轨 | 自述/文档/用药/医嘱，来源和发生/录入日期 | 无记录为空；不生成因果摘要 | ⏳ |
-| GET `/api/aosd/metrics?metricId=…` | 可比指标与来源 | 序列、单位/方法/机构上下文、空值/单点 | 缺上下文拆组，不计算活动度 | ⏳ |
+| GET `/api/aosd/metrics?metricId=…` | 原报告值与报告上下文 | 原项目名/原值/单位/采样与报告日期及精度/机构/方法/原件定位 | 缺项为空，不宣称临床可比或计算活动度 | ⏳ |
 | GET `/api/aosd/visit-prep` | 选材/问题/快照 | 已确认或显式选择的未核对材料/原件ID、各自review_state、问题、私密排除 | 未核对持续标注；不自动含私密/候选值 | ⏳ |
-| POST `/api/aosd/narratives` | 本人或授权代记 | 原话/来源/关系/发生日/授权/私密 | 未授权、来源缺失400/409 | ⏳ |
+| POST `/api/aosd/narratives` | 本人或授权代记 | content_kind/experienced_by/speaker/recorded_by/原话/关系/发生日/授权/私密 | 未授权默认不持久化，来源缺失400/409；AI不可改授权 | ⏳ |
 | POST `/api/aosd/narratives/:id/corrections` | 补充/更正 | 新版本、revision、原版本ID | 不覆盖旧版 | ⏳ |
 | POST `/api/aosd/documents` | 原件索引 | hash/MIME/机构/报告日/相对路径 | 公共资产与患者文件分根 | ⏳ |
 | POST `/api/aosd/candidates/:id/decision` | 候选逐项接受/拒收 | 审核后的字段或拒收状态 | 拒收零副作用；失败不造候选 | ⏳ |
 | POST `/api/aosd/medication-events` | 实际/计划用药事件 | 药名/剂量原文/事件类型/来源 | 无调药或疗效计算 | ⏳ |
 | POST `/api/aosd/clinical-replies` | 医嘱/医生原话与患者理解 | 分栏原话、说话者、日期、理解 | AI不可生成医生答复 | ⏳ |
 | POST `/api/aosd/questions` | 保存待问事项 | 正文/主题/私密/来源 | 不自动作答为事实 | ⏳ |
-| POST `/api/aosd/visit-snapshots` | 生成可回看快照 | 已选ID/截止/导出hash | 私密过滤；更正标过时 | ⏳ |
+| POST `/api/aosd/visit-snapshots` | 生成可回看快照 | 所选对象ID+revision/原件hash/review_state/问题顺序/简详格式/截止/导出相对路径与hash | 私密过滤；源更正不改旧内容只标过时 | ⏳ |
+| POST `/api/aosd/questions/:id/answer` | 诊后关联原问题补答复 | 已问/未问、医生原话、患者理解、来源与revision | 不改写旧快照；AI不得伪造医生答复 | ⏳ |
 | GET `/assets/guidebooks/nhc-86-rare-diseases-2025.pdf` | 公共官方指南本地阅读 | PDF、content-type、page锚由阅读器处理 | 常量白名单，拒绝`..`/患者路径 | ⏳ 文件已就位路由未做 |
 
 ## Agent 消息

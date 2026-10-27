@@ -81,6 +81,7 @@
 | 布局 | business-first/customFrame；Agent 右栏默认关，展开 35% | 默认项；仅骨架选择，未验证宿主交互 |
 | 仓库 | 预定 `xyb-openharness-dsh-plugins/aosd-workbench`，private | 供配置一致性；按新流程 G1 后才创建 |
 | 官方指南本地资产 | `assets/guidebooks/nhc-86-rare-diseases-2025.pdf` 随包，概要另给官方链接 | **用户 2026-10-27 明确要求**；覆盖 starter 原件不入包默认规则，包清单/hash/本地链接/装机另验 |
+| 非肿瘤治疗出口文案 | “按文件列举的类别并列”，不暗示肿瘤病期/线序 | 36号原文保留在家族规范；本项目经HVT评审提出偏离，**待G1签认**；M9回流可配非肿瘤文案 |
 
 ## 六、里程碑证据索引
 
