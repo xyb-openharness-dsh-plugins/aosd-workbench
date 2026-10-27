@@ -30,6 +30,10 @@ for (const { id: name, pages: baseline, expectedOverlapRate: expected } of basel
 }
 
 check(/send:true/.test(interaction) && /34 号/.test(interaction), 'AI 交互未按34号一键发送合同')
+check(/config\.root/.test(spec) && /唯一数据库/.test(spec), '未选外部目录的事实库落点不清')
+check(/未获相应授权的内容不得写入患者共享档案，\*\*默认不持久化未授权草稿\*\*/.test(spec), '未授权代记默认持久化边界缺失')
+check(/采样\/报告日期及各自精度/.test(spec) && /revision\/原件hash/.test(spec), '指标日期或快照revision合同缺失')
+check(!/只保留公共线索位置/.test(scenarios), '一期仍残留研究占位')
 check(/本地阅读/.test(interaction) && /官方 PDF/.test(interaction), '指南缺本地/官方双入口')
 check(!spec.includes('G1 已签') && !interaction.includes('已签认，不能'), '草案不得冒充已签G1')
 

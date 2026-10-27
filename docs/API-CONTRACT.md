@@ -7,6 +7,7 @@
 - `apiBase` 不含 `/api`；调用写 `${apiBase}/api/aosd/...`。独立 HTTP 与宿主 webServer 共用 handler，鉴权由宿主 connection 执行，loopback 不豁免。
 - `subjectId`、`occurredAt` 带时区/精度、`recordedAt`、来源 `actorId/documentId`、`revision`、`reviewState`、`requestId` 是公共语义。
 - 成功空集合为 `[]`，未知为 `null`；不混用空字符串/0 冒充缺值。
+- 应用专属事实库使用宿主注入的 `config.root`，初始化不依赖外部资料目录。`root` 用于草稿、手工、确认、修订和读模型所需的同一事实实体，不另建草稿库副本；未选外部目录的409仅限确实需要外部原件/导出路径的命令，不得阻断手录、刷新恢复和跨页读模型。
 - 错误统一 `{ "error": { "code", "message", "retryable", "details?" } }`；400 输入、404 未知、409 未选目录或修订冲突、413 文件过大、502 外部服务、503 未配置。向页面返回结构化错误，禁止裸 throw、堆栈/密钥/患者本机路径外泄。
 - 写命令显式列、事务、revision 和幂等键；更正新增版本；旧快照只标过时。候选接受不是医学审核。
 
