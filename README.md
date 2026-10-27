@@ -36,7 +36,7 @@ NHC 2025 在 AOSD 章节列举 NSAIDs、糖皮质激素、传统 DMARDs 和 IL-1
 
 ## 当前阶段与领取
 
-M1 调研与独立评审修订中，G1/G2/G3 未签，认领见 [Issue #51](https://github.com/xyb-openharness-dsh-plugins/.github/issues/51)。按新版流程 G1 后才建仓；预定 repository 不代表远端已创建。患者/家属访谈为 0，未开展临床审核。
+M1 调研与多轮独立评审修订完成，最终定点复核待回；G1/G2/G3 未签，认领见 [Issue #51](https://github.com/xyb-openharness-dsh-plugins/.github/issues/51)。按新版流程 G1 后由维护者 triage 建仓；预定 repository 不代表远端已创建。患者/家属访谈为 0，未开展临床审核。
 
 ## 开发顺序
 

@@ -35,6 +35,7 @@ check(/未获相应授权的内容不得写入患者共享档案，\*\*默认不
 check(/采样\/报告日期及各自精度/.test(spec) && /revision\/原件hash/.test(spec), '指标日期或快照revision合同缺失')
 const settings = read('docs/SETTINGS-DESIGN.md')
 check(!/临床试验区域/.test(settings) && !/研究匹配入口/.test(settings), '一期设置仍残留临床研究区域')
+check(!/只保留公共线索位置/.test(scenarios), '一期场景仍残留研究占位')
 check(/本地阅读/.test(interaction) && /官方 PDF/.test(interaction), '指南缺本地/官方双入口')
 check(!spec.includes('G1 已签') && !interaction.includes('已签认，不能'), '草案不得冒充已签G1')
 
