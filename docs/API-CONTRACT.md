@@ -16,7 +16,7 @@
 | GET `/api/aosd/bootstrap` | 看板/设置/当前subject读模型 | 当前版本、最近记录、待核对与能力状态 | 未选目录仍给空态而非假就绪 | ⏳ |
 | GET `/api/aosd/day?date=YYYY-MM-DD` | 同日四轨 | 自述/文档/用药/医嘱，来源和发生/录入日期 | 无记录为空；不生成因果摘要 | ⏳ |
 | GET `/api/aosd/metrics?metricId=…` | 可比指标与来源 | 序列、单位/方法/机构上下文、空值/单点 | 缺上下文拆组，不计算活动度 | ⏳ |
-| GET `/api/aosd/visit-prep` | 选材/问题/快照 | 已确认事实ID、问题、私密排除 | 不自动含私密/候选值 | ⏳ |
+| GET `/api/aosd/visit-prep` | 选材/问题/快照 | 已确认或显式选择的未核对材料/原件ID、各自review_state、问题、私密排除 | 未核对持续标注；不自动含私密/候选值 | ⏳ |
 | POST `/api/aosd/narratives` | 本人或授权代记 | 原话/来源/关系/发生日/授权/私密 | 未授权、来源缺失400/409 | ⏳ |
 | POST `/api/aosd/narratives/:id/corrections` | 补充/更正 | 新版本、revision、原版本ID | 不覆盖旧版 | ⏳ |
 | POST `/api/aosd/documents` | 原件索引 | hash/MIME/机构/报告日/相对路径 | 公共资产与患者文件分根 | ⏳ |
@@ -29,7 +29,7 @@
 
 ## Agent 消息
 
-业务页仅发送 `{type:'aosd:agent-draft', prompt, send:true}`，父窗口校验 `event.source===自身iframe.contentWindow` 与 `event.origin===location.origin`，prompt≤8000。只含用户选择的已确认事实；private 默认排除，未确认候选只报数量不带值，不带本机路径。按 34 号 plain/draft 守卫、会话归属和降级；独立 file:// 显示演示/复制，不冒充发送。
+业务页仅发送 `{type:'aosd:agent-draft', prompt, send:true}`，父窗口校验 `event.source===自身iframe.contentWindow` 与 `event.origin===location.origin`，prompt≤8000。只含用户选择的内容及明确授权；private 默认排除，未确认候选只报数量不带值，不带本机路径。AI只做逐字提取、来源整理与待问清单排版，禁止新增个体病名、正常/异常、复发/并发症、紧急度、调药或疗效判断。按 34 号 plain/draft 守卫、会话归属和降级；独立 file:// 显示演示/复制，不冒充发送。固定提示：工具不能判断急症，紧急或迅速加重不适应立即走当地急救/医疗机构渠道，不等待记录、导出或AI。
 
 ## 外部服务
 

@@ -9,14 +9,14 @@
 | subject | subject_id | 患者主体、病名记录状态、创建时间；无诊断计算 | 用户建档；更正留史 |
 | source_actor | actor_id / subject可选 | 本人/家属/机构/医生/AI、与患者关系、显示名 | 自述或文档；AI不具医学审核身份 |
 | document | document_id / subject | hash、MIME、机构、报告日、相对位置、来源类型 | 原件；公共指南与患者文件分根 |
-| narrative | narrative_id / subject+actor | 发生与录入时间、原话、生活影响、授权、私密、确认、revision | 本人或代记；补充与更正追加 |
+| narrative | narrative_id / subject+actor | `experienced_by`、`content_kind`（本人自述/家属转述本人/家属观察或感受）、`speaker`、`recorded_by`、关系与授权范围、发生与录入时间、原话、私密、确认、revision | 三类来源分开；本人/家属补充与更正各自追加 |
 | medication_event | event_id / subject | 药名/剂量原文、计划或实际、事件类型、日期、来源、revision | 医嘱/本人/代记分列；不推疗效 |
 | clinical_reply | reply_id / subject | 医生原话、说话者、日期、患者理解、来源、revision | 原话与理解不合并 |
 | candidate | candidate_id / document或任务 | 抽取类型、原值、结构化候选、逐项状态、模型/版本、失败 | AI/MinerU；拒收零副作用 |
 | metric_definition | metric_id | 名称、方法/机构/单位上下文、分类/数值类型 | 指标目录，不能替报告补单位 |
 | observation | observation_id / subject+metric+document | 原文值、可空数值、单位、参考上下限、日期、来源定位 | 确认记录派生；缺值为null |
 | question | question_id / subject | 问题、主题、私密、答复关联、状态 | 用户问题，不是医学结论 |
-| visit_snapshot | snapshot_id / subject | 已选事实ID、数据截止、生成时间、导出hash、过时状态 | 历史不可静默改写 |
+| visit_snapshot | snapshot_id / subject | 已选事实或原件ID、每项review_state、数据截止、生成时间、导出hash、过时状态 | 可显式包含未核对材料但持续标注；历史不可静默改写 |
 | public_resource | resource_id | 公共版本、URL/本地路径、地区、证据性质、核验日期、局限 | 与患者事实分离；未核实如实 |
 
 ## 2. 约束与读模型
@@ -28,7 +28,8 @@
 - 可选值显式 null，尤其数值/单位/参考范围；`<0.5`保留原文且 `value_num=null`。
 - `using` 保留字改用 `in_use`；复合主键裸查询 `ORDER BY rowid`；手写倒序只按 ord；分节标题 `section_titles`；分类指标不进入数值曲线。
 - 读模型：dashboard、day-view、metrics、visit-prep 共用已确认事实与 revision；快照含数据截止，不存整页任意 state。
-- 私密数据、API读模型、导出、AI 草稿默认 fail-closed，显式当次授权可追踪。
+- `is_private`、`family_visible`、`export_allowed`、`ai_allowed` 四个默认值独立；敏感记录默认私密，家属/导出/AI默认排除。撤销只影响之后，不承诺召回已导出或已发送内容。
+- 未授权代记不得写入共享档案；受限本地草稿的存储/删除请求须 G3 与访谈另行决定，不得默认进看板、导出或 AI。
 
 ## 3. 持久化与规模
 
