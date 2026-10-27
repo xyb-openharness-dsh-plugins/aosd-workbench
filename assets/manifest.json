@@ -1,6 +1,17 @@
 {
   "assets": [
     {
+      "path": "guidebooks/nhc-86-rare-diseases-2025.pdf",
+      "source": "https://www.gov.cn/zhengce/zhengceku/202507/P020250710595668350272.pdf",
+      "sha256": "d03fe69585320fea7938bf85bea9ec346a3d5d7671c7d8627fff8393679bbfef",
+      "bytes": 15611195,
+      "pages": 517,
+      "purpose": "国家卫健委 2025 年罕见病指南官方 PDF，本地可离线打开；AOSD 为 printed 17-21 / PDF 21-25",
+      "licenseStatus": "中国政府网公开发布的官方诊疗指南；保留原始文件、机构与来源，不修改正文，不冒充其他版权许可",
+      "userDecision": "2026-10-27 用户要求将本指南保留到 assets，供开箱阅读和浮窗本地链接使用",
+      "localPath": "assets/guidebooks/nhc-86-rare-diseases-2025.pdf#page=21"
+    },
+    {
       "path": "brand/xyb-logo.png",
       "source": "community-provided brand reference; original local path omitted",
       "sha256": "e7bf8431f3838aac9b790ebe4893c7941f86fd60aaff6caa79dc67d9baa69a58",

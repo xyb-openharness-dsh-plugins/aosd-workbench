@@ -8,4 +8,5 @@
 - `patterns/disease-primer.js` / `disease-primer.css`：36 号疾病概要（「?」入口）的实现。经典脚本（IIFE，`file://` 下可直接 `<script src>`），自动把「?」插进 `.top-actions`，点开是整页视图，`open` 压一条 history、`close` 走 `history.back()`。数据来自 `window.DISEASE_PRIMER`（四段：定义 / 指南情况 / 治疗全景 / 趋势）。改它必须同时跑 `scripts/probe-disease-primer.mjs` 与 `--self-test`。
 - `manifest.json`：记录来源、用途、体积、hash、许可状态。自定义图片、数据、字体都应追加。
 
-不捆绑商业字体、云 API 凭据、MCP 服务私有配置、临床原始数据集或真实用户文件。第三方包/技能与数据集许可证各自核验，不因同属社区而省略。
+- `guidebooks/nhc-86-rare-diseases-2025.pdf`：用户于 2026-10-27 明确要求随项目保留的官方指南。来源为中国政府网公开 PDF，517 页、15,611,195 bytes、SHA-256 `d03fe69585320fea7938bf85bea9ec346a3d5d7671c7d8627fff8393679bbfef`。AOSD 为正文 17–21 页（PDF 21–25 页）。保留官方来源链接，提供本地只读阅读，不修改正文；本地链接的渲染/装机验证见 M2/M6，不能以文件存在代替 UI 通过。
+- `guidebooks/manifest.json`：该文件的版本、hash、页码、获取日期与用途。

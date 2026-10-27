@@ -80,10 +80,12 @@
 | 品牌 | 「小 X 宝」为占位名；包名 `aosd-workbench`，slug `aosd` | 提问未答，按推荐默认；未宣称患者社群认可 |
 | 布局 | business-first/customFrame；Agent 右栏默认关，展开 35% | 默认项；仅骨架选择，未验证宿主交互 |
 | 仓库 | 预定 `xyb-openharness-dsh-plugins/aosd-workbench`，private | 供配置一致性；按新流程 G1 后才创建 |
+| 官方指南本地资产 | `assets/guidebooks/nhc-86-rare-diseases-2025.pdf` 随包，概要另给官方链接 | **用户 2026-10-27 明确要求**；覆盖 starter 原件不入包默认规则，包清单/hash/本地链接/装机另验 |
 
 ## 六、里程碑证据索引
 
 - 认领：<https://github.com/xyb-openharness-dsh-plugins/.github/issues/51>，`claimed`，2026-10-27。
 - 初始化：`dsh-wb-cli@1.10.0-rc.2`，revision `6282be9d69e4e9c465c0aa3cd5c9a348cf424bde`，本地 starter 有 9 个既有修改文件，保留未覆盖。
-- 指南官方入口（M1 待下载核数）：[国家卫健委 2025-07-10 通知](https://www.nhc.gov.cn/yzygj/c100068/202507/5b3f41180a42465eb9eec34597bacaf2.shtml)，国卫办医政函〔2025〕252号。
+- 指南官方入口：[国家卫健委 2025-07-10 通知](https://www.nhc.gov.cn/yzygj/c100068/202507/5b3f41180a42465eb9eec34597bacaf2.shtml)，国卫办医政函〔2025〕252号。官方 PDF 已实测 517 页，AOSD 正文 17–21 / PDF 21–25；按用户新决定已保留至 `assets/guidebooks/`。
+- M0 实测：`npm run check` 退出码 0、`staticPass:true`；`npm test` 7/7 通过。通过范围仅骨架与当前测试，不是原型/业务/装机。
 - 当前失败的检查须原样记录，修好后再追加命令和真实输出，不能回填为一开始就通过。
