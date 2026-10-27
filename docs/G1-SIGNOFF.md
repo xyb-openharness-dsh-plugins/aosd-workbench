@@ -4,8 +4,22 @@
 
 ## 1. 可签认的文件版本
 
-- 签认对象为 git 提交（签认时填入最终 HEAD）和以下文件 hash/内容：
-  `docs/SPEC.md`、`docs/SCENARIOS.md`、`docs/INTERACTION-DESIGN.md`、`docs/FEATURE-INVENTORY.csv`、`docs/SCHEMA.md`、`docs/UI-DESIGN.md`、`docs/ACCEPTANCE.md`、`docs/HVT-REVIEW.md`、`docs/DESIGN-REVIEW.md`、`docs/RESEARCH-MEDICAL.md`、`docs/USER-RESEARCH.md`。
+- 签认对象为 git 提交 **`38deb56`**（`docs: record final G1 review and pending signoff`）及以下文件 SHA-256：
+
+```
+d58f18e4008985c4763b0a86406864179c78c001cd541d3a7ace323eee8cda08  docs/SPEC.md
+3ab089cb0d289afe6c87c46e21daf13ee5362dcfe79a0432a84259bb943475f2  docs/SCENARIOS.md
+302c6447b4892456b26bb015c1bff40254ecb6c8c18f21f40763cbc441a283a0  docs/INTERACTION-DESIGN.md
+9b66f9cd3224b248b3c30956b747be1489d7e4fd3f74519acda850592420274d  docs/FEATURE-INVENTORY.csv
+af4d99af87582c3e7e7f5770aeaab185ffcb30d348b542fa6651066f363d96c0  docs/SCHEMA.md
+cc84536e9fa39e5a51c100d5e4410e514796d219417fcc6829b5a0c557deb09c  docs/UI-DESIGN.md
+0ad62399821f42e8ca6ff82c97cbe39406d0ec389d8d02de6f31f33dbf7ac39e  docs/ACCEPTANCE.md
+9fdf919322b512f207a17a605a30d6ed2e2b9bdcdb20d2b0b502cfbde097d2c1  docs/HVT-REVIEW.md
+8336372edcd007c62487348c2847ac2a96b13850151a12684c12a5e45402b3ab  docs/DESIGN-REVIEW.md
+16122067811896990023b13e11ea6447b43dae4aa49f3bd1ce2f0dd019040c7b  docs/RESEARCH-MEDICAL.md
+9e71bbd56a4530ee6b60a69bcb801b3f57fa9852a8e5ca1f42632deadfe512ae  docs/USER-RESEARCH.md
+```
+
 - 文件评审状态：HVT 最终定点复核 **B0/G0/W0/U2**（S04真实报告识别、S08公共医学/资源仍待核）。文件可供G1范围讨论，不等于患者需求或医学内容通过。
 
 ## 2. 拟确认的一期范围（请逐项确认）
