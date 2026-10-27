@@ -1,0 +1,17 @@
+node_modules/
+*.tgz
+.DS_Store
+.env
+.env.*
+!.env.example
+_private/
+input/
+output/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.db
+# 指南原件留本机核验，不分发；仅 manifest/短摘录元数据入库。
+guidebooks/*.pdf
+guidebooks/*.pages.json
+guidebooks/nhc-page-*.txt

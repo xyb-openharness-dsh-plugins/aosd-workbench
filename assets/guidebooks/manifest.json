@@ -1,0 +1,32 @@
+{
+  "documents": [
+    {
+      "id": "nhc-86-rare-diseases-2025",
+      "org": "国家卫生健康委办公厅",
+      "title": "软骨发育不全等86个罕见病病种诊疗指南（2025年版）",
+      "notice": "国卫办医政函〔2025〕252号",
+      "version": "2025年版",
+      "published": "2025-07-10",
+      "noticeDate": "2025-06-17",
+      "pages": 517,
+      "sha256": "d03fe69585320fea7938bf85bea9ec346a3d5d7671c7d8627fff8393679bbfef",
+      "url": "https://www.gov.cn/zhengce/zhengceku/202507/P020250710595668350272.pdf",
+      "noticeUrl": "https://www.nhc.gov.cn/yzygj/c100068/202507/5b3f41180a42465eb9eec34597bacaf2.shtml",
+      "kind": "pdf",
+      "original": true,
+      "accessed": "2026-10-27",
+      "ocr": false,
+      "extraction": "pypdf 本地文本提取；未调用云端 MinerU；完整文件 15 MB，超过 flash-extract 10 MB 限制",
+      "allowedUse": "核对目录、版本、页码与范围；本项目研究摘录不复制进产品；不将临床标准实现为自测或处置推荐",
+      "chapters": [
+        {
+          "name": "成人斯蒂尔病",
+          "catalogNumber": 4,
+          "printedPages": "17-21",
+          "pdfPages": "21-25",
+          "verified": true
+        }
+      ]
+    }
+  ]
+}
