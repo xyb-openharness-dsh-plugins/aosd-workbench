@@ -1,0 +1,19 @@
+{
+  "purpose": "M1 一级显示名重名率对照，不是患者界面或业务数据。",
+  "sources": [
+    {
+      "id": "cervical",
+      "path": "/Users/qinxiaoqiang/Downloads/cervical-workbench/prototypes/v0.2/app.js",
+      "lines": "51-59",
+      "expectedOverlapRate": 0.25,
+      "pages": ["看板", "病情整理", "我的分期", "治疗历程", "性与生育", "放疗与长期影响", "检查与指标", "病情一图秀", "营养支持", "心理支持", "复诊准备", "临床研究"]
+    },
+    {
+      "id": "breast",
+      "path": "/Users/qinxiaoqiang/Downloads/breast-cancer-workbench/prototypes/v0.4/app.js",
+      "lines": "33-37",
+      "expectedOverlapRate": 0.125,
+      "pages": ["看板", "病情整理", "病情一图秀", "临床", "营养支持", "心理支持", "全程与康复", "收藏与回顾"]
+    }
+  ]
+}
