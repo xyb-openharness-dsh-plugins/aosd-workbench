@@ -36,7 +36,8 @@ const app = readFileSync(APP, 'utf8');
 
 /** 从 app.js 提取全部路由名；两种写法都支持，返回 null 表示两种都没找到。 */
 function extractRoutes(src) {
-  const arr = src.match(/(?:var|const|let)\s+ROUTES\s*=\s*\[([\s\S]*?)\];/);
+  /* 数组式：允许单行或跨行（单行写法曾被误判为“没有 ROUTES”） */
+  const arr = src.match(/(?:var|const|let)\s+ROUTES\s*=\s*\[([^\]]*)\]/);
   if (arr) {
     const routes = [...arr[1].matchAll(/['"]([^'"]+)['"]/g)].map((m) => m[1]);
     if (routes.length) return routes;
@@ -55,7 +56,7 @@ function extractRoutes(src) {
 
 /* 全量渲染探针：必须覆盖每一条叶子路由。新项目改名/新增探针时改这里。 */
 const ALL_ROUTE_PROBES = [
-  'scripts/probe-aml-m2.mjs',
+  'scripts/probe-prototype.mjs',
 ];
 /* 抽样探针：只要求它列出的路由在 ROUTES 里真实存在（防止页面改名后探针扫空气仍全绿）。 */
 const SAMPLE_PROBES = [

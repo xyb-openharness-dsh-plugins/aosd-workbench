@@ -15,7 +15,7 @@
  */
 import { DatabaseSync } from 'node:sqlite'
 import { createHash } from 'node:crypto'
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -198,24 +198,24 @@ const B = {
 /* ---------- 化验序列（A：9 点 / 每 3 周；B：6 点 / 每 4 周） ---------- */
 const A_LAB_DATES = ['2026-05-04', '2026-05-25', '2026-06-15', '2026-07-06', '2026-07-27', '2026-08-17', '2026-09-07', '2026-09-28', '2026-10-19']
 const A_SERIES = {
-  crp: { values: [86, 42, 18, 9, 34, 12, 6, 8, 5], refLow: 0, refHigh: 8 },
-  esr: { values: [78, 55, 38, 25, 62, 30, 18, 22, 16], refLow: 0, refHigh: 20 },
-  ferritin: { values: [1850, 920, 480, 260, 760, 310, 190, 210, 170], refLow: 15, refHigh: 150 },
-  wbc: { values: [14.2, 11.8, 9.6, 8.1, 12.4, 9.2, 7.4, 7.8, 6.9], refLow: 3.5, refHigh: 9.5 },
-  neutrophil_pct: { values: [86, 80, 74, 68, 82, 72, 64, 66, 61], refLow: 40, refHigh: 75 },
-  alt: { values: [78, 52, 34, 28, 46, 30, 22, 25, 21], refLow: 7, refHigh: 40 },
-  hgb: { values: [108, 112, 118, 121, 116, 120, 124, 123, 126], refLow: 115, refHigh: 150 },
-  plt: { values: [420, 360, 290, 260, 330, 280, 240, 250, 235], refLow: 125, refHigh: 350 },
+  crp: { unit: 'mg/L', values: [86, 42, 18, 9, 34, 12, 6, 8, 5], refLow: 0, refHigh: 8 },
+  esr: { unit: 'mm/h', values: [78, 55, 38, 25, 62, 30, 18, 22, 16], refLow: 0, refHigh: 20 },
+  ferritin: { unit: 'ng/mL', values: [1850, 920, 480, 260, 760, 310, 190, 210, 170], refLow: 15, refHigh: 150 },
+  wbc: { unit: '×10⁹/L', values: [14.2, 11.8, 9.6, 8.1, 12.4, 9.2, 7.4, 7.8, 6.9], refLow: 3.5, refHigh: 9.5 },
+  neutrophil_pct: { unit: '%', values: [86, 80, 74, 68, 82, 72, 64, 66, 61], refLow: 40, refHigh: 75 },
+  alt: { unit: 'U/L', values: [78, 52, 34, 28, 46, 30, 22, 25, 21], refLow: 7, refHigh: 40 },
+  hgb: { unit: 'g/L', values: [108, 112, 118, 121, 116, 120, 124, 123, 126], refLow: 115, refHigh: 150 },
+  plt: { unit: '×10⁹/L', values: [420, 360, 290, 260, 330, 280, 240, 250, 235], refLow: 125, refHigh: 350 },
 }
 const B_LAB_DATES = ['2026-05-19', '2026-06-16', '2026-07-14', '2026-08-11', '2026-09-08', '2026-10-06']
 const B_SERIES = {
-  crp: { values: [28, 19, 11, 14, 8, 16], refLow: 0, refHigh: 8 },
-  esr: { values: [46, 38, 28, 32, 22, 35], refLow: 0, refHigh: 20 },
-  alt: { values: [32, 28, 24, 26, 21, 29], refLow: 7, refHigh: 40 },
-  creatinine: { values: [78, 80, 76, 79, 77, 81], refLow: 57, refHigh: 97 },
-  wbc: { values: [8.9, 8.2, 7.6, 8.0, 6.9, 7.8], refLow: 3.5, refHigh: 9.5 },
-  hgb: { values: [142, 140, 143, 141, 144, 140], refLow: 130, refHigh: 175 },
-  rf: { values: [18, 16, 15, 17, 14, 19], refLow: 0, refHigh: 14 },
+  crp: { unit: 'mg/L', values: [28, 19, 11, 14, 8, 16], refLow: 0, refHigh: 8 },
+  esr: { unit: 'mm/h', values: [46, 38, 28, 32, 22, 35], refLow: 0, refHigh: 20 },
+  alt: { unit: 'U/L', values: [32, 28, 24, 26, 21, 29], refLow: 7, refHigh: 40 },
+  creatinine: { unit: 'µmol/L', values: [78, 80, 76, 79, 77, 81], refLow: 57, refHigh: 97 },
+  wbc: { unit: '×10⁹/L', values: [8.9, 8.2, 7.6, 8.0, 6.9, 7.8], refLow: 3.5, refHigh: 9.5 },
+  hgb: { unit: 'g/L', values: [142, 140, 143, 141, 144, 140], refLow: 130, refHigh: 175 },
+  rf: { unit: 'IU/mL', values: [18, 16, 15, 17, 14, 19], refLow: 0, refHigh: 14 },
 }
 
 function buildObservations(profileKey, dates, series, metricIds) {
@@ -236,7 +236,7 @@ function buildObservations(profileKey, dates, series, metricIds) {
         documentId: `${profileKey}-doc-lab-${date}`,
         rawText: String(value),
         valueNum: value,
-        unit: missingUnit ? null : (metricId === 'rf' ? 'IU/mL' : s.unit || null),
+        unit: missingUnit ? null : (s.unit || null),
         refLow: s.refLow,
         refHigh: missingHigh ? null : s.refHigh,
         collectedAt: date,
@@ -251,16 +251,6 @@ function buildObservations(profileKey, dates, series, metricIds) {
   return out
 }
 
-const METRIC_UNITS = {
-  crp: 'mg/L', esr: 'mm/h', ferritin: 'ng/mL', wbc: '×10⁹/L', neutrophil_pct: '%',
-  alt: 'U/L', hgb: 'g/L', plt: '×10⁹/L', il6: 'pg/mL', creatinine: 'µmol/L', rf: 'IU/mL',
-}
-for (const [metricId, unit] of Object.entries(METRIC_UNITS)) {
-  for (const profile of [A, B]) {
-    const metric = profile.metrics.find((m) => m.id === metricId)
-    if (metric) metric.unit = unit
-  }
-}
 
 A.observations = buildObservations('A', A_LAB_DATES, A_SERIES, Object.keys(A_SERIES))
 B.observations = buildObservations('B', B_LAB_DATES, B_SERIES, Object.keys(B_SERIES))
@@ -501,7 +491,12 @@ export function writeDemoFiles({ writeSqlite = true } = {}) {
   mkdirSync(dbDir, { recursive: true })
   mkdirSync(protoDir, { recursive: true })
   if (writeSqlite) {
-    const db = buildDemoDatabase(join(dbDir, 'demo-data.sqlite'))
+    const dbPath = join(dbDir, 'demo-data.sqlite')
+    for (const suffix of ['', '-wal', '-shm']) {
+      const target = dbPath + suffix
+      if (existsSync(target)) rmSync(target)
+    }
+    const db = buildDemoDatabase(dbPath)
     db.close()
   }
   const js = `/* 合成演示数据；由 demo/build-demo-data.mjs 生成，勿手改。 */\nwindow.DEMO_DATA = ${JSON.stringify(data, null, 2)};\n`

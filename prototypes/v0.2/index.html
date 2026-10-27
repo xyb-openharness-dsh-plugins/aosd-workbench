@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>小X宝 · 成人斯蒂尔病工作台（原型 v0.2）</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="primer.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app" id="app">
+  <header class="topbar" id="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">✿</span>
+      <span class="brand-name">小X宝</span>
+      <span class="brand-sub">成人斯蒂尔病工作台</span>
+      <span class="ver-chip" id="ver-chip">v0.2.0-prototype</span>
+    </div>
+    <p class="topbar-note" id="topbar-note">记录有来源，判断交给医生。</p>
+    <div class="top-actions">
+      <button type="button" class="ghost" id="font-toggle" aria-pressed="false">大字</button>
+      <button type="button" class="ghost" id="settings-btn">设置</button>
+      <button type="button" class="primary" id="agent-toggle" aria-expanded="false" aria-controls="agent-dock">AI 对话</button>
+    </div>
+  </header>
+
+  <div class="shell">
+    <nav class="nav" id="nav" aria-label="主导航"></nav>
+    <main class="main" id="main" tabindex="-1"></main>
+    <aside class="agent-dock" id="agent-dock" hidden aria-label="AI 对话（演示）">
+      <div class="agent-head">
+        <strong>AI 对话</strong>
+        <span class="agent-state" id="agent-state">演示 · 未连接宿主</span>
+        <button type="button" class="ghost" id="agent-close" aria-label="收起 AI 面板">收起</button>
+      </div>
+      <div class="agent-body" id="agent-body">
+        <p class="agent-hint">这里是<strong>宿主模拟</strong>，不是真实 DSH 会话。发送按钮只验证草稿与上下文，不连接模型。</p>
+        <div class="agent-draft" id="agent-draft" role="status">还没有带入内容。</div>
+        <label class="sr-only" for="agent-input">演示输入</label>
+        <textarea id="agent-input" rows="4" placeholder="把问题写在这里（演示，不会发送到模型）"></textarea>
+        <div class="agent-actions">
+          <button type="button" class="ghost" id="agent-clear">清空</button>
+          <button type="button" class="primary" id="agent-send">发送（演示）</button>
+        </div>
+        <p class="agent-note">工具不能判断急症；如有紧急或迅速加重的不适，请立即按当地急救/医疗机构渠道求助，不要等待记录、导出或 AI 回复。</p>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="footer">
+    <span>合成演示数据 · 不含真实患者信息 · 不提供诊断或治疗建议</span>
+    <span class="footer-right"><span id="foot-version">v0.2.0-prototype</span> · 演示生成 <span id="foot-date">2026-10-27</span></span>
+  </footer>
+</div>
+
+<script src="demo-data.js"></script>
+<script src="primer-data.js"></script>
+<script src="page-view.js"></script>
+<script src="primer.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

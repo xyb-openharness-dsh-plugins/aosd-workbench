@@ -14,7 +14,7 @@
 
 EULAR/PReS 2024 正式推荐将 sJIA 与 AOSD 放在同一 Still’s disease 谱系讨论，同时保留成人与儿童、不同医疗环境的证据边界。本台保存患者资料与医生原话，不根据症状、单个指标或 AI 文本生成疾病名。
 
-**来源**：NHC《86个罕见病病种诊疗指南（2025年版）》· 2025年版 · 官方原件已取得 · P17–19 · [本地阅读]( /assets/guidebooks/nhc-86-rare-diseases-2025.pdf#page=21) · [官方PDF](https://www.gov.cn/zhengce/zhengceku/202507/P020250710595668350272.pdf)；[EULAR/PReS 2024 全文](https://pmc.ncbi.nlm.nih.gov/articles/PMC11672000/) · 2024-09-24 · 全文已取得。
+**来源**：NHC《86个罕见病病种诊疗指南（2025年版）》· 2025年版 · 官方原件已取得 · P17–19 · [本地阅读](../assets/guidebooks/nhc-86-rare-diseases-2025.pdf#page=21) · [官方PDF](https://www.gov.cn/zhengce/zhengceku/202507/P020250710595668350272.pdf)；[EULAR/PReS 2024 全文](https://pmc.ncbi.nlm.nih.gov/articles/PMC11672000/) · 2024-09-24 · 全文已取得。
 
 ## 2 医学资料规范和指南情况（evidence）
 
