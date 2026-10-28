@@ -6,6 +6,8 @@ function localGuideUrl(rel) {
 (function () {
   'use strict'
   const D = window.DEMO_DATA
+  /* 嵌入式（Desktop iframe）下原生会话是唯一 AI 面板；file:// 原型才用演示面板。 */
+  const EMBEDDED = (() => { try { return window.parent !== window } catch { return false } })()
   const PROFILES = D.profiles
   const state = {
     profile: 'A',
@@ -787,7 +789,19 @@ function localGuideUrl(rel) {
     return `我在整理${p.displayName.replace('（合成）', '')}的记录，请帮我把已选内容整理成问题清单；不要诊断、不要建议用药。`
   }
 
+  function sendToAgent(prompt) {
+    if (!EMBEDDED) { openAgent(); return }
+    const target = location.origin && location.origin !== 'null' ? location.origin : '*'
+    try {
+      window.parent.postMessage({ type: 'aosd:agent-draft', prompt, send: true }, target)
+      notify('已带入右侧原生 AI 会话；发送由宿主完成，回复不会自动写入记录。')
+    } catch (error) {
+      notify('没能把草稿带入原生会话：' + (error && error.message ? error.message : error))
+    }
+  }
+
   function openAgent() {
+    if (EMBEDDED) { sendToAgent(agentDraftFor(state.view)); return }
     state.agentOpen = true
     const dock = document.getElementById('agent-dock')
     dock.hidden = false
@@ -965,7 +979,7 @@ function localGuideUrl(rel) {
       if (target.dataset.doc) { event.preventDefault(); openDocument(target.dataset.doc); return }
       if (target.dataset.trial) { event.preventDefault(); openTrial(target.dataset.trial); return }
       if (target.dataset.action === 'trial-tab') { event.preventDefault(); state.trialTab = target.dataset.tab; render(); return }
-      if (target.dataset.discuss) { event.preventDefault(); openAgent(); return }
+      if (target.dataset.discuss) { event.preventDefault(); sendToAgent(agentDraftFor(state.view)); return }
       if (target.dataset.action === 'go') { event.preventDefault(); go(target.dataset.view || 'dashboard'); return }
       if (target.dataset.action === 'quick-record') { event.preventDefault(); go('voices'); return }
       if (target.dataset.action === 'upload') {
@@ -1012,6 +1026,7 @@ function localGuideUrl(rel) {
       btn.textContent = state.large ? '标准字' : '大字'
     })
     document.getElementById('agent-toggle').addEventListener('click', () => {
+      if (EMBEDDED) { sendToAgent(agentDraftFor(state.view)); return }
       if (state.agentOpen) closeAgent(); else openAgent()
     })
     document.getElementById('agent-close').addEventListener('click', closeAgent)

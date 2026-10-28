@@ -101,7 +101,7 @@ export function apply(ctx, config = {}) {
 
   json('/api/aosd/health', 'GET', (req, res) => {
     if (req.method !== 'GET') return fail(res, 'method_not_allowed', '仅支持 GET', 405)
-    send(res, 200, { ok: true, version: manifest.version, apiVersion: 'v1', capabilities: ['health', 'write'], database: db ? 'open' : (dbError ? 'error' : 'lazy') })
+    send(res, 200, { ok: true, version: manifest.version, apiVersion: 'v1', capabilities: ['health', 'write'], database: db ? 'open' : (dbError ? 'error' : 'lazy'), dir: config?.root || null })
   })
 
   // 手工维护写入：叙述（本人/家属三类来源）

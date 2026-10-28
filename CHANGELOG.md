@@ -2,6 +2,10 @@
 
 只增不删；每条写清"改了什么 + 为什么 + 用户可见结果"。版本号与 VERSION、package.json 三处必须一致。
 
+## 0.5.7 — 2026-10-28
+
+- 移植 VasPal 已验收客户端：原生 AI 会话（ensureSession）、业务/会话可拖分隔线（25–45%、悬停增亮+⠿、遮罩、指针捕获、键盘、localStorage）；iframe 内 AI 按钮在嵌入式下直接走 `aosd:agent-draft` 发送，不再开演示面板。
+
 ## 0.5.6 — 2026-10-28
 
 - 修复 apply 必崩：删除懒加载重构后遗留的 `ctx.effect(() => db.close?.())`（db 此时为 null）。桩件实测 UI 200/3174B、health 200。
