@@ -1082,6 +1082,7 @@ function localGuideUrl(rel) {
   }
 
   function boot() {
+    if (EMBEDDED) document.documentElement.classList.add('is-embedded')
     pv = window.createPageView({ crumbRoot: '主页' })
     document.getElementById('topbar').insertAdjacentHTML('beforeend', '<button type="button" class="ghost" data-primer-open aria-label="疾病概要：定义、指南、治疗全景、趋势">?</button>')
     bind()
