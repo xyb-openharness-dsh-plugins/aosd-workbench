@@ -37,9 +37,23 @@ function readJsonBody(req) {
   })
 }
 
-export function apply(ctx) {
+export function apply(ctx, config = {}) {
   if (!ctx.webServer?.register) throw new Error('Desktop webServer.register is unavailable')
-  const db = store.openStore(ctx.config?.root ? join(ctx.config.root, 'aosd.sqlite') : ':memory:')
+  /* 懒加载：开库失败不能把插件带崩（否则路由不注册、UI 直接 not found）。
+     真机踩过：apply 里同步 openStore 抛错 → 整个 bundle 失效。 */
+  let db = null
+  let dbError = null
+  function getDb() {
+    if (db) return db
+    if (dbError) return null
+    try {
+      db = store.openStore(config?.root ? join(config.root, 'aosd.sqlite') : ':memory:')
+      return db
+    } catch (error) {
+      dbError = String(error && error.message || error)
+      return null
+    }
+  }
 
   const staticOpts = { version: manifest.version, buildDate: manifest.buildDate }
   /* 单前缀 + 内部分发（同家族底本）：宿主只注册 /api/aosd 一条 prefix，
@@ -56,6 +70,7 @@ export function apply(ctx) {
     if (reject !== undefined) return send(res, reject, { error: { code: 'auth_required', message: 'Authentication required' } })
     const handler = apiRoutes.get(`${req.method} ${pathname}`)
     if (!handler) return fail(res, 'not_found', '未知接口', 404)
+    if (pathname !== '/api/aosd/health' && !getDb()) return fail(res, 'database_unavailable', dbError || '数据库不可用', 503)
     try {
       await handler(req, res)
     } catch (error) {
@@ -76,11 +91,17 @@ export function apply(ctx) {
     sendJson: send,
     notFound: (res, message) => fail(res, 'not_found', message, 404),
   })
-  ctx.webServer.register({ kind: 'prefix', path: '/api/aosd', handler: handle }, 'aosd api + static')
+  ctx.effect(() => {
+    const dispose = ctx.webServer.register({ kind: 'prefix', path: '/api/aosd', handler: handle })
+    return () => {
+      try { dispose && dispose() } catch { /* 卸载清理失败不盖住原错误 */ }
+      try { db && db.close() } catch { /* 同上 */ }
+    }
+  }, 'aosd ui + api')
 
   json('/api/aosd/health', 'GET', (req, res) => {
     if (req.method !== 'GET') return fail(res, 'method_not_allowed', '仅支持 GET', 405)
-    send(res, 200, { ok: true, version: manifest.version, apiVersion: 'v1', capabilities: ['health', 'write'] })
+    send(res, 200, { ok: true, version: manifest.version, apiVersion: 'v1', capabilities: ['health', 'write'], database: db ? 'open' : (dbError ? 'error' : 'lazy') })
   })
 
   // 手工维护写入：叙述（本人/家属三类来源）
@@ -88,7 +109,7 @@ export function apply(ctx) {
     if (req.method !== 'POST') return fail(res, 'method_not_allowed', '仅支持 POST', 405)
     const body = await readJsonBody(req)
     if (!body.profileKey) return fail(res, 'missing_profile', 'profileKey 必填')
-    const row = store.writeNarrative(db, body.profileKey, body)
+    const row = store.writeNarrative(getDb(), body.profileKey, body)
     send(res, 201, { narrative: row })
   })
 
@@ -96,7 +117,7 @@ export function apply(ctx) {
     if (req.method !== 'POST') return fail(res, 'method_not_allowed', '仅支持 POST', 405)
     const body = await readJsonBody(req)
     if (!body.profileKey || !body.id) return fail(res, 'missing_profile', 'profileKey/id 必填')
-    const row = store.correctNarrative(db, body.profileKey, body.id, body)
+    const row = store.correctNarrative(getDb(), body.profileKey, body.id, body)
     send(res, 201, { narrative: row })
   })
 
@@ -104,28 +125,28 @@ export function apply(ctx) {
     if (req.method !== 'POST') return fail(res, 'method_not_allowed', '仅支持 POST', 405)
     const body = await readJsonBody(req)
     if (!body.profileKey) return fail(res, 'missing_profile', 'profileKey 必填')
-    send(res, 201, { entry: store.writeNutrition(db, body.profileKey, body) })
+    send(res, 201, { entry: store.writeNutrition(getDb(), body.profileKey, body) })
   })
 
   json('/api/aosd/mind', 'POST', async (req, res) => {
     if (req.method !== 'POST') return fail(res, 'method_not_allowed', '仅支持 POST', 405)
     const body = await readJsonBody(req)
     if (!body.profileKey) return fail(res, 'missing_profile', 'profileKey 必填')
-    send(res, 201, { entry: store.writeMind(db, body.profileKey, body) })
+    send(res, 201, { entry: store.writeMind(getDb(), body.profileKey, body) })
   })
 
   json('/api/aosd/questions', 'POST', async (req, res) => {
     if (req.method !== 'POST') return fail(res, 'method_not_allowed', '仅支持 POST', 405)
     const body = await readJsonBody(req)
     if (!body.profileKey) return fail(res, 'missing_profile', 'profileKey 必填')
-    send(res, 201, { question: store.writeQuestion(db, body.profileKey, body) })
+    send(res, 201, { question: store.writeQuestion(getDb(), body.profileKey, body) })
   })
 
   json('/api/aosd/candidates/:id/decision', 'POST', async (req, res) => {
     if (req.method !== 'POST') return fail(res, 'method_not_allowed', '仅支持 POST', 405)
     const body = await readJsonBody(req)
     if (!body.profileKey || !body.id) return fail(res, 'missing_profile', 'profileKey/id 必填')
-    const result = store.decideCandidate(db, body.profileKey, body.id, body.decision)
+    const result = store.decideCandidate(getDb(), body.profileKey, body.id, body.decision)
     send(res, 200, result)
   })
 
@@ -133,7 +154,7 @@ export function apply(ctx) {
     if (req.method !== 'POST') return fail(res, 'method_not_allowed', '仅支持 POST', 405)
     const body = await readJsonBody(req)
     if (!body.profileKey || !body.id) return fail(res, 'missing_profile', 'profileKey/id 必填')
-    send(res, 200, { trial: store.toggleTrialSaved(db, body.profileKey, body.id) })
+    send(res, 200, { trial: store.toggleTrialSaved(getDb(), body.profileKey, body.id) })
   })
 
   json('/api/aosd/day', 'GET', (req, res) => {
@@ -143,8 +164,7 @@ export function apply(ctx) {
     const date = url.searchParams.get('date')
     if (!profileKey || !date) return fail(res, 'missing_params', 'profileKey/date 必填')
     const includePrivate = url.searchParams.get('private') === '1'
-    send(res, 200, store.readDay(db, profileKey, date, { includePrivate }))
+    send(res, 200, store.readDay(getDb(), profileKey, date, { includePrivate }))
   })
 
-  ctx.effect(() => db.close?.(), 'aosd store close')
 }
