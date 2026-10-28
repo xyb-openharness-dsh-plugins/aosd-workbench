@@ -1,0 +1,112 @@
+{
+  "disease": "adult-onset Still's disease",
+  "query": "adult-onset Still's disease",
+  "sourcesRequested": [
+    "ictrp",
+    "ctv",
+    "chictr_online",
+    "chinadrugtrials"
+  ],
+  "retrievedAt": "2026-10-28T02:57:01.363Z",
+  "snapshotDate": "2026-10-28",
+  "records": 2,
+  "manifestSha256": "9ba3a386dfcf8cc52577c28ab8b9c2218c86a3e702c4f49982e3d9aee0ee5cbe",
+  "states": [
+    {
+      "sourceId": "ictrp",
+      "state": "FAILED",
+      "reasonCode": "UPSTREAM_UNKNOWN_ERROR",
+      "explanation": "ictrp_search 上游返回错误：上游工具返回 isError，但未提供错误详情。",
+      "attempted": true,
+      "freshness": {
+        "kind": "cached_network",
+        "staleAfterDays": 7
+      },
+      "coverage": {
+        "scope": "全球登记库聚合；已知上游结果不完整。",
+        "zeroResultMeaning": "仅表示本次 ICTRP 查询无返回；上游存在已知静默缺失，零结果不能作为“不存在”的结论。",
+        "indexOrArchiveOnly": false
+      },
+      "completeness": {
+        "isLowerBound": true,
+        "warnings": []
+      },
+      "resultCount": null
+    },
+    {
+      "sourceId": "ctv",
+      "state": "NO_RESULTS",
+      "reasonCode": "EMPTY_RESULT_SET",
+      "explanation": "仅表示本地 SQLite/FTS 索引未命中，不代表 ClinicalTrials.gov 上不存在该试验。",
+      "attempted": true,
+      "freshness": {
+        "kind": "local_index",
+        "retrievedAt": "2026-10-28T02:56:46.409Z",
+        "staleAfterDays": 30,
+        "stale": false
+      },
+      "coverage": {
+        "scope": "本地全文索引；未同步的记录不可见。",
+        "zeroResultMeaning": "仅表示本地 SQLite/FTS 索引未命中，不代表 ClinicalTrials.gov 上不存在该试验。",
+        "indexOrArchiveOnly": true
+      },
+      "completeness": {
+        "isLowerBound": false,
+        "warnings": [
+          "本地索引中 0 命中：该索引只覆盖 1434 条研究（其中 1434 条有完整详情），0 命中不等于没有相关试验。关键词检索请优先用 ClinicalTrials.gov；也可按 UTN/NCT/slug 用 get_study_detail 直查，或用 import_csv_export / sync_sitemap 扩大覆盖后再检索。"
+        ],
+        "upstreamReportedTotal": 0,
+        "rowsReturned": 0,
+        "recordsIncomplete": false
+      },
+      "resultCount": 0
+    },
+    {
+      "sourceId": "chictr_online",
+      "state": "SUCCESS",
+      "reasonCode": "OK",
+      "explanation": "来源返回 2 条记录。",
+      "attempted": true,
+      "freshness": {
+        "kind": "cached_network",
+        "retrievedAt": "2026-10-28T02:57:01.363Z",
+        "staleAfterDays": 7,
+        "stale": false
+      },
+      "coverage": {
+        "scope": "在线查询，受 WAF、会话有效期与限流约束。",
+        "zeroResultMeaning": "仅表示本次在线查询无命中；结果依赖短期会话与缓存。",
+        "indexOrArchiveOnly": false
+      },
+      "completeness": {
+        "isLowerBound": false,
+        "warnings": [],
+        "rowsReturned": 2,
+        "recordsIncomplete": false
+      },
+      "resultCount": 2
+    },
+    {
+      "sourceId": "chinadrugtrials",
+      "state": "DENIED",
+      "reasonCode": "CHINADRUGTRIALS_NO_RESULT_TABLE",
+      "explanation": "ChinaDrugTrials 未返回结果表格与分页信息，无法确认本次检索是否真正执行；通常是会话失效、被限流或返回了中间页面。",
+      "attempted": true,
+      "freshness": {
+        "kind": "controlled_session_archive",
+        "staleAfterDays": 30
+      },
+      "coverage": {
+        "scope": "本地受控增量归档；仅同步时联网，且需要合法的用户会话。",
+        "zeroResultMeaning": "仅表示本地受控归档中无该关键词命中，不代表官网无该试验。",
+        "indexOrArchiveOnly": true
+      },
+      "completeness": {
+        "isLowerBound": false,
+        "warnings": []
+      },
+      "resultCount": null
+    }
+  ],
+  "note": "合成/公共登记快照；登记状态未核实，不等于可入组、有效或安全。FAILED/DENIED/NEEDS_SETUP 不算查过。"
+}
