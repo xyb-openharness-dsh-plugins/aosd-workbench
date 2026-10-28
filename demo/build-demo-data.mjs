@@ -122,7 +122,7 @@ const A = {
   ],
   profileDoc: {
     definition: '成人斯蒂尔病是一种罕见、病因不明的自身炎症性疾病。',
-    diagnosisText: '医生记录：成人斯蒂尔病（2026-05，首次风湿免疫科门诊）。',
+    doctorRecordText: '医生记录：成人斯蒂尔病（2026-05，首次风湿免疫科门诊）。',
     keyReports: ['A-doc-lab-2026-05-04', 'A-doc-note-2026-10-09'],
     careTeam: ['演示医院 · 风湿免疫科'],
   },
@@ -138,6 +138,29 @@ const A = {
     { id: 'q-A-03', text: '皮疹反复是不是病情活动？', topic: '皮疹', isPrivate: false, sortOrder: 3, status: 'unasked', answerReplyId: null, createdAt: '2026-09-30', ord: 3 },
     { id: 'q-A-04', text: '能不能打流感疫苗？', topic: '疫苗', isPrivate: false, sortOrder: 4, status: 'answered', answerReplyId: 'r-A-04', createdAt: '2026-09-28', ord: 4 },
     { id: 'q-A-05', text: '月经变少和病或药有关吗？', topic: '私密', isPrivate: true, sortOrder: 5, status: 'unasked', answerReplyId: null, createdAt: '2026-10-12', ord: 5 },
+  ],
+  trialProfile: {
+    doctorRecord: '成人斯蒂尔病（医生记录 2026-05）',
+    diseaseDuration: '2026-04 起反复发热/皮疹/关节痛',
+    treatmentLines: ['泼尼松（05-08 起，已减至 15mg）', '托珠单抗 每4周（05-15 起，6 次）', '甲氨蝶呤 10mg 每周（09-11 起）'],
+    keyFindings: ['血清铁蛋白升高（峰值 1850 ng/mL）', 'CRP/ESR 升高后回落', '白细胞与中性粒细胞升高'],
+    comorbidity: ['无已知慢性病（合成）'],
+    notes: '合成档案，仅演示建档结构；试验数据未查询。',
+  },
+  trials: [
+    { nctId: 'DEMO-NCT-001', title: 'IL-1 抑制剂在活动性 Still 病中的 II 期研究（合成）', phase: 'II', status: 'recruiting', sites: '多中心（不含中国，合成）', conditions: ['成人斯蒂尔病'], criteria: [
+      { kind: '诊断', text: '确诊 Still 病', state: 'match', evidence: '本档医生记录 2026-05' },
+      { kind: '年龄', text: '18–75 岁', state: 'match', evidence: '出生 1992' },
+      { kind: '疾病活动', text: '活动性疾病证据', state: 'unknown', evidence: '本台不判定活动度，需医生确认' },
+      { kind: '用药洗脱', text: '既往生物制剂洗脱期', state: 'conflict', evidence: '正在使用托珠单抗（05-15 起）' },
+    ], pct: 50, saved: true },
+    { nctId: 'DEMO-NCT-002', title: '慢性关节炎型 Still 病的观察性队列（合成）', phase: '观察性', status: 'active', sites: '欧洲（合成）', conditions: ['Still 病'], criteria: [
+      { kind: '诊断', text: '确诊 Still 病', state: 'match', evidence: '本档医生记录 2026-05' },
+      { kind: '关节炎为主', text: '以关节炎为主要表现', state: 'unknown', evidence: '本档为系统型，需医生判断' },
+    ], pct: 50, saved: false },
+    { nctId: 'DEMO-NCT-003', title: 'MAS 并发症登记研究（合成）', phase: '登记', status: 'completed', sites: '美国（合成）', conditions: ['MAS'], criteria: [
+      { kind: '诊断', text: 'MAS 诊断', state: 'conflict', evidence: '本档无 MAS 记录' },
+    ], pct: 0, saved: false },
   ],
   snapshots: [
     { id: 's-A-01', createdAt: '2026-06-19T08:00:00+08:00', cutoffAt: '2026-06-19', format: 'brief', itemIds: ['n-A-05', 'n-A-06', 'A-doc-lab-2026-06-15'], questionIds: ['q-A-01'], reviewStates: { 'n-A-05': 'confirmed', 'n-A-06': 'confirmed', 'A-doc-lab-2026-06-15': 'confirmed' }, relativePath: 'demo/exports/A-2026-06-19-visit.md', stale: false, ord: 1 },
@@ -215,7 +238,7 @@ const B = {
   ],
   profileDoc: {
     definition: '成人斯蒂尔病是一种罕见、病因不明的自身炎症性疾病。',
-    diagnosisText: '医生记录：成人斯蒂尔病（2026-05，首次风湿免疫科门诊）。',
+    doctorRecordText: '医生记录：成人斯蒂尔病（2026-05，首次风湿免疫科门诊）。',
     keyReports: ['B-doc-lab-2026-05-19', 'B-doc-us-2026-05-21'],
     careTeam: ['演示市第一医院 · 风湿科', '演示医院 · 风湿免疫科'],
   },
@@ -229,6 +252,21 @@ const B = {
     { id: 'q-B-02', text: '关节肿反复，是不是要加生物制剂？', topic: '用药', isPrivate: false, sortOrder: 2, status: 'unasked', answerReplyId: null, createdAt: '2026-09-15', ord: 2 },
     { id: 'q-B-03', text: '外院和本院化验不一致，以哪个为准？', topic: '化验', isPrivate: false, sortOrder: 3, status: 'answered', answerReplyId: 'r-B-03', createdAt: '2026-09-08', ord: 3 },
     { id: 'q-B-04', text: '能不能正常出差？', topic: '工作', isPrivate: true, sortOrder: 4, status: 'unasked', answerReplyId: null, createdAt: '2026-10-05', ord: 4 },
+  ],
+  trialProfile: {
+    doctorRecord: '成人斯蒂尔病（医生记录 2026-05）',
+    diseaseDuration: '2026-05 起关节炎为主',
+    treatmentLines: ['泼尼松（05-20 起，已减至 10mg）', '甲氨蝶呤 每周（05-20 起，08-12 加量）'],
+    keyFindings: ['RF 轻度升高', 'ESR/CRP 波动'],
+    comorbidity: ['无已知慢性病（合成）'],
+    notes: '合成档案；试验数据未查询。',
+  },
+  trials: [
+    { nctId: 'DEMO-NCT-004', title: '关节炎型 Still 病 TNF 抑制剂研究（合成）', phase: 'II', status: 'recruiting', sites: '多中心（合成）', conditions: ['Still 病'], criteria: [
+      { kind: '诊断', text: '确诊 Still 病', state: 'match', evidence: '本档医生记录 2026-05' },
+      { kind: '关节炎为主', text: '以关节炎为主要表现', state: 'match', evidence: '医生记录 2026-05；皮疹轻微' },
+      { kind: '排除生物制剂', text: '未用过 TNF 抑制剂', state: 'match', evidence: '用药记录无 TNF 抑制剂' },
+    ], pct: 100, saved: true },
   ],
   snapshots: [
     { id: 's-B-01', createdAt: '2026-09-09T08:10:00+08:00', cutoffAt: '2026-09-09', format: 'brief', itemIds: ['n-B-07', 'B-doc-lab-2026-09-08', 'm-B-04'], questionIds: ['q-B-01', 'q-B-02', 'q-B-03'], reviewStates: { 'n-B-07': 'confirmed', 'B-doc-lab-2026-09-08': 'confirmed', 'm-B-04': 'planned' }, relativePath: 'demo/exports/B-2026-09-09-visit.md', stale: false, ord: 1 },
@@ -366,7 +404,9 @@ CREATE TABLE clinical_replies (id TEXT NOT NULL, profile_key TEXT NOT NULL, occu
 CREATE TABLE questions (id TEXT NOT NULL, profile_key TEXT NOT NULL, text TEXT NOT NULL, topic TEXT NOT NULL, is_private INTEGER NOT NULL, sort_order INTEGER NOT NULL, status TEXT NOT NULL, answer_reply_id TEXT, created_at TEXT NOT NULL, ord INTEGER NOT NULL, PRIMARY KEY (profile_key, id));
 CREATE TABLE nutrition_logs (id TEXT NOT NULL, profile_key TEXT NOT NULL, occurred_at TEXT NOT NULL, text TEXT NOT NULL, intake TEXT, weight_kg REAL, note TEXT, is_private INTEGER NOT NULL, ord INTEGER NOT NULL, PRIMARY KEY (profile_key, id));
 CREATE TABLE mind_logs (id TEXT NOT NULL, profile_key TEXT NOT NULL, occurred_at TEXT NOT NULL, text TEXT NOT NULL, mood TEXT, sleep TEXT, is_private INTEGER NOT NULL, note TEXT, ord INTEGER NOT NULL, PRIMARY KEY (profile_key, id));
-CREATE TABLE profile_docs (profile_key TEXT PRIMARY KEY, definition TEXT NOT NULL, diagnosis_text TEXT NOT NULL, key_reports_json TEXT NOT NULL, care_team_json TEXT NOT NULL);
+CREATE TABLE profile_docs (profile_key TEXT PRIMARY KEY, definition TEXT NOT NULL, doctor_record TEXT NOT NULL, key_reports_json TEXT NOT NULL, care_team_json TEXT NOT NULL);
+CREATE TABLE trial_profiles (profile_key TEXT PRIMARY KEY, doctor_record TEXT NOT NULL, disease_duration TEXT NOT NULL, treatment_lines_json TEXT NOT NULL, key_findings_json TEXT NOT NULL, comorbidity_json TEXT NOT NULL, notes TEXT);
+CREATE TABLE trials (id TEXT NOT NULL, profile_key TEXT NOT NULL, nct_id TEXT NOT NULL, title TEXT NOT NULL, phase TEXT NOT NULL, status TEXT NOT NULL, sites TEXT, conditions_json TEXT NOT NULL, criteria_json TEXT NOT NULL, pct INTEGER NOT NULL, saved INTEGER NOT NULL, ord INTEGER NOT NULL, PRIMARY KEY (profile_key, id));
 CREATE TABLE visit_snapshots (id TEXT NOT NULL, profile_key TEXT NOT NULL, created_at TEXT NOT NULL, cutoff_at TEXT NOT NULL, format TEXT NOT NULL, item_ids_json TEXT NOT NULL, question_ids_json TEXT NOT NULL, review_states_json TEXT NOT NULL, relative_path TEXT NOT NULL, sha256 TEXT NOT NULL, stale INTEGER NOT NULL, ord INTEGER NOT NULL, PRIMARY KEY (profile_key, id));
 `
 
@@ -443,12 +483,25 @@ export function buildDemoDatabase(location = ':memory:') {
       id: m.id, profile_key: profile.key, occurred_at: m.occurredAt, text: m.text,
       mood: m.mood, sleep: m.sleep, is_private: m.isPrivate ? 1 : 0, note: m.note, ord: m.ord,
     })))
-    insertMany(db, 'profile_docs', ['profile_key', 'definition', 'diagnosis_text', 'key_reports_json', 'care_team_json'], [{
+    insertMany(db, 'profile_docs', ['profile_key', 'definition', 'doctor_record', 'key_reports_json', 'care_team_json'], [{
       profile_key: profile.key, definition: profile.profileDoc.definition,
-      diagnosis_text: profile.profileDoc.diagnosisText,
+      doctor_record: profile.profileDoc.doctorRecordText,
       key_reports_json: JSON.stringify(profile.profileDoc.keyReports),
       care_team_json: JSON.stringify(profile.profileDoc.careTeam),
     }])
+    insertMany(db, 'trial_profiles', ['profile_key', 'doctor_record', 'disease_duration', 'treatment_lines_json', 'key_findings_json', 'comorbidity_json', 'notes'], [{
+      profile_key: profile.key, doctor_record: profile.trialProfile.doctorRecord,
+      disease_duration: profile.trialProfile.diseaseDuration,
+      treatment_lines_json: JSON.stringify(profile.trialProfile.treatmentLines),
+      key_findings_json: JSON.stringify(profile.trialProfile.keyFindings),
+      comorbidity_json: JSON.stringify(profile.trialProfile.comorbidity),
+      notes: profile.trialProfile.notes,
+    }])
+    insertMany(db, 'trials', ['id', 'profile_key', 'nct_id', 'title', 'phase', 'status', 'sites', 'conditions_json', 'criteria_json', 'pct', 'saved', 'ord'], profile.trials.map((t, i) => ({
+      id: t.nctId, profile_key: profile.key, nct_id: t.nctId, title: t.title, phase: t.phase,
+      status: t.status, sites: t.sites, conditions_json: JSON.stringify(t.conditions),
+      criteria_json: JSON.stringify(t.criteria), pct: t.pct, saved: t.saved ? 1 : 0, ord: i + 1,
+    })))
     insertMany(db, 'visit_snapshots', ['id', 'profile_key', 'created_at', 'cutoff_at', 'format', 'item_ids_json', 'question_ids_json', 'review_states_json', 'relative_path', 'sha256', 'stale', 'ord'], profile.snapshots.map((s) => ({
       id: s.id, profile_key: profile.key, created_at: s.createdAt, cutoff_at: s.cutoffAt,
       format: s.format, item_ids_json: JSON.stringify(s.itemIds), question_ids_json: JSON.stringify(s.questionIds),
@@ -473,6 +526,8 @@ export function readDemoFromDatabase(db) {
     const medications = db.prepare('SELECT * FROM medication_events WHERE profile_key = ? ORDER BY rowid').all(key)
     const replies = db.prepare('SELECT * FROM clinical_replies WHERE profile_key = ? ORDER BY rowid').all(key)
     const questions = db.prepare('SELECT * FROM questions WHERE profile_key = ? ORDER BY rowid').all(key)
+    const trialProfile = db.prepare('SELECT * FROM trial_profiles WHERE profile_key = ?').get(key)
+    const trials = db.prepare('SELECT * FROM trials WHERE profile_key = ? ORDER BY rowid').all(key)
     const nutrition = db.prepare('SELECT * FROM nutrition_logs WHERE profile_key = ? ORDER BY rowid').all(key)
     const mind = db.prepare('SELECT * FROM mind_logs WHERE profile_key = ? ORDER BY rowid').all(key)
     const profileDoc = db.prepare('SELECT * FROM profile_docs WHERE profile_key = ?').get(key)
@@ -533,6 +588,17 @@ export function readDemoFromDatabase(db) {
         sortOrder: q.sort_order, status: q.status, answerReplyId: q.answer_reply_id,
         createdAt: q.created_at, ord: q.ord,
       })),
+      trialProfile: {
+        doctorRecord: trialProfile.doctor_record, diseaseDuration: trialProfile.disease_duration,
+        treatmentLines: JSON.parse(trialProfile.treatment_lines_json),
+        keyFindings: JSON.parse(trialProfile.key_findings_json),
+        comorbidity: JSON.parse(trialProfile.comorbidity_json), notes: trialProfile.notes,
+      },
+      trials: trials.map((t) => ({
+        nctId: t.nct_id, title: t.title, phase: t.phase, status: t.status, sites: t.sites,
+        conditions: JSON.parse(t.conditions_json), criteria: JSON.parse(t.criteria_json),
+        pct: t.pct, saved: Boolean(t.saved),
+      })),
       nutrition: nutrition.map((n) => ({
         id: n.id, occurredAt: n.occurred_at, text: n.text, intake: n.intake,
         weightKg: n.weight_kg, note: n.note, isPrivate: Boolean(n.is_private), ord: n.ord,
@@ -542,7 +608,7 @@ export function readDemoFromDatabase(db) {
         sleep: m.sleep, isPrivate: Boolean(m.is_private), note: m.note, ord: m.ord,
       })),
       profileDoc: {
-        definition: profileDoc.definition, diagnosisText: profileDoc.diagnosis_text,
+        definition: profileDoc.definition, doctorRecordText: profileDoc.doctor_record,
         keyReports: JSON.parse(profileDoc.key_reports_json), careTeam: JSON.parse(profileDoc.care_team_json),
       },
       snapshots: snapshots.map((s) => ({

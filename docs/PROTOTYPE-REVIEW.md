@@ -77,10 +77,21 @@
 
 仍未做：真实文件上传/写入、云解析、营养/心理新增记录写盘、独立视觉评审（供应商不可用）。
 
+## 6.2 v0.4 用户反馈落点（2026-10-28 第二轮返工）
+
+| 反馈 | 落地 | 证据 |
+| --- | --- | --- |
+| 一图秀无指标选择 | 左栏一级分类（炎症指标/血常规/肝功能）折叠 + 二级勾选 ≤4，图区扩大到 1080×520 | `v04-timeline-select.png` |
+| 文字堆积 | toggletip（ⓘ 浮窗）承载长说明；已实现于一图秀与试验页，模式待沉淀脚手架（M9：docs/39-TOGGLETIP.md） | 截图 + `tip()` 实现 |
+| 治疗与临床应为临床试验 | 新增 `临床研究` 三页：基础建档→检索→结果分析；粗筛符合度 pct + 证据链（符合/待确认/不满足）+ 收藏；详情用整页弹窗；DEMO- 前缀合成试验 | `v04-trials-search.png`、`v04-trial-detail.png` |
+| 手工维护/AI 写入 + SQLite 唯一存储 | 生产层：`schema/migrations/0001_initial.sql`（sha 冻结）+ `dsh/store.js`（叙述/营养/心理/问题/候选决策/收藏 + 同日读模型 fail-closed）+ 7 个 POST/GET 接口 + `check-schema-freeze` 闸门 + 27 项存储测试；原型层：手工记一段（≤6字段弹窗）与 AI 草稿→候选→确认/拒收演示内存闭环 | `test/store.test.mjs` 27/27、`v04-voices-manual.png` |
+
+判定列红线：0001 与 demo 全库经扫描无 diagnosis/risk_level/eligible/suitability/activity_score/efficacy（`trial_profiles.doctor_record`、`profile_docs.doctor_record` 只存医生原话）。
+
 ## 7. G2 签认需要用户明确
 
 - 原型版本：`v0.3.0-prototype`（见本轮提交）
-- 确认范围：11 页 + 两档案 + 上传四步 + 一图秀 + 指标卡 + 整页详情 + 疾病概要 + AI 演示面板的**视觉与交互结构**
+- 确认范围：12 页 + 两档案 + 上传四步 + 一图秀（指标选择）+ 指标卡 + 临床研究三页 + 手工/AI 写入演示 + 整页详情 + 疾病概要 + AI 演示面板的**视觉与交互结构**
 - 确认内容：布局、入口文案、来源标签、原值表、未核对标识、折叠收展、窄屏行为
 - 未确认即不进入 M5 开发版移植；确认也不等于医学/患者验证或装机通过。
 

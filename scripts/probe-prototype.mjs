@@ -11,7 +11,7 @@ const browser = await chromium.launch({
 })
 const results = []
 /* 全量路由：与 app.js 的 ROUTES 一一对应；新增页面必须同步，否则 check-probe-coverage 会红。 */
-const views = ['dashboard', 'voices', 'day', 'documents', 'metrics', 'timeline', 'treatment', 'nutrition', 'mind', 'visit', 'resources']
+const views = ['dashboard', 'voices', 'day', 'documents', 'metrics', 'timeline', 'treatment', 'trials', 'nutrition', 'mind', 'visit', 'resources']
 
 for (const width of [1280, 760, 390]) {
   const page = await browser.newPage({ viewport: { width, height: 900 } })

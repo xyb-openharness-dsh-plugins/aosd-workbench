@@ -10,6 +10,10 @@
     agentOpen: false,
     large: false,
     dayDate: null,
+    trialTab: 'profile',
+    /* 演示内存写入：仅本页会话有效，生产写入走 /api/* + config.root SQLite（dsh/store.js）。 */
+    demoCandidates: [],
+    demoNarratives: [],
   }
   let pv = null
 
@@ -25,14 +29,15 @@
     ['documents', '资料上传与核对', 'doc'],
     ['metrics', '检查与指标', 'table'],
     ['timeline', '病情一图秀', 'chart'],
-    ['treatment', '治疗与临床', 'pill'],
+    ['treatment', '治疗记录', 'pill'],
+    ['trials', '临床研究', 'flask'],
     ['nutrition', '营养支持', 'leaf'],
     ['mind', '心理支持', 'heart'],
     ['visit', '复诊准备', 'clipboard'],
     ['resources', '疾病与资源', 'book'],
   ]
   /* 全量探针据此逐页渲染；加页必须同时更新探针，避免“探针没扫到却全绿”。 */
-  const ROUTES = ['dashboard', 'voices', 'day', 'documents', 'metrics', 'timeline', 'treatment', 'nutrition', 'mind', 'visit', 'resources']
+  const ROUTES = ['dashboard', 'voices', 'day', 'documents', 'metrics', 'timeline', 'treatment', 'trials', 'nutrition', 'mind', 'visit', 'resources']
   const ICONS = {
     home: '<path d="M4 10.5 12 4l8 6.5V20H4z"/>',
     voice: '<path d="M4 5h16v10H9l-5 4z"/>',
@@ -84,6 +89,37 @@
       </div>
     </div>`
   }
+
+  /* toggletip/richtooltip：长说明收进浮窗，减少正文文字堆积（沉淀为脚手架模式 docs/39-TOGGLETIP.md）。 */
+  let openTipEl = null
+  function tip(title, body, source) {
+    const id = 'tip-' + Math.abs((title + body).split('').reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0))
+    return `<span class="tip-wrap"><button type="button" class="tip-btn" aria-expanded="false" aria-controls="${id}" data-tip-toggle="${id}" aria-label="${esc(title)}说明">ⓘ</button>
+      <span class="tip-panel" id="${id}" role="dialog" aria-label="${esc(title)}" hidden>
+        <b>${esc(title)}</b>
+        <span>${esc(body)}</span>
+        ${source ? `<i>${esc(source)}</i>` : ''}
+      </span></span>`
+  }
+  function bindTips(root) {
+    ;(root || document).querySelectorAll('[data-tip-toggle]').forEach((btn) => {
+      if (btn.dataset.tipBound) return
+      btn.dataset.tipBound = '1'
+      btn.addEventListener('click', (event) => {
+        event.stopPropagation()
+        const panel = document.getElementById(btn.dataset.tipToggle)
+        if (openTipEl && openTipEl !== panel) { openTipEl.hidden = true; const b = openTipEl.parentElement.querySelector('.tip-btn'); if (b) b.setAttribute('aria-expanded', 'false') }
+        const show = panel.hidden
+        panel.hidden = !show
+        btn.setAttribute('aria-expanded', String(show))
+        openTipEl = show ? panel : null
+      })
+    })
+  }
+  document.addEventListener('click', (event) => {
+    if (!openTipEl) return
+    if (!event.target.closest('.tip-wrap')) { openTipEl.hidden = true; const b = openTipEl.parentElement.querySelector('.tip-btn'); if (b) b.setAttribute('aria-expanded', 'false'); openTipEl = null }
+  })
 
   function pageHead(title, subtitle, actions = '') {
     return `<div class="page-head"><div><h1>${esc(title)}</h1><p>${esc(subtitle)}</p></div>${actions ? `<div class="head-actions">${actions}</div>` : ''}</div>`
@@ -150,17 +186,19 @@
   /* ---------------- 本人与代记 ---------------- */
   function viewVoices() {
     const p = P()
+    const demoByKind = {}
+    for (const n of state.demoNarratives) (demoByKind[n.contentKind] = demoByKind[n.contentKind] || []).push(n)
     const groups = [
       ['self', '本人自述'],
       ['family_relay', '家属转述本人'],
       ['family_observation', '家属观察/感受'],
     ]
     return `${profileSwitcher()}
-    ${pageHead('本人与代记', '谁的经历、谁说的、谁录入的分开显示；未授权内容不进入共享档案。', agentButton('voices'))}
+    ${pageHead('本人与代记', '谁的经历、谁说的、谁录入的分开显示；未授权内容不进入共享档案。', agentButton('voices') + ' <button type="button" class="primary" data-action="manual-record">手工记一段</button>')}
     <div class="banner soft">本页只示范合成档案。私密记录默认不进导出、不发送给 AI；代记需要患者本人授权，AI 不能代替确认。</div>
     <div class="grid">
       ${groups.map(([kind, label]) => {
-        const list = p.narratives.filter((n) => n.contentKind === kind)
+        const list = [...p.narratives.filter((n) => n.contentKind === kind), ...(demoByKind[kind] || [])]
         return `<section class="card"><h2>${esc(label)}</h2>
           <div class="list">${list.map((n) => narrativeLine(n, { detail: true })).join('') || EMPTY}</div>
         </section>`
@@ -208,7 +246,8 @@
   /* ---------------- 报告与核对 ---------------- */
   function viewDocuments() {
     const p = P()
-    const pending = p.candidates.filter((c) => c.decision === 'pending')
+    const allCandidates = [...p.candidates, ...state.demoCandidates.map((c) => ({ ...c, demo: true }))]
+    const pending = allCandidates.filter((c) => c.decision === 'pending')
     const rejected = p.candidates.filter((c) => c.decision === 'rejected')
     return `${profileSwitcher()}
     ${pageHead('报告与核对', '原件、候选、确认结果分开。候选必须逐项核对才进入记录；拒收不产生任何记录。', agentButton('documents'))}
@@ -259,7 +298,8 @@
   /* ---------------- 资料上传与核对（四步闭环） ---------------- */
   function viewDocuments() {
     const p = P()
-    const pending = p.candidates.filter((c) => c.decision === 'pending')
+    const allCandidates = [...p.candidates, ...state.demoCandidates.map((c) => ({ ...c, demo: true }))]
+    const pending = allCandidates.filter((c) => c.decision === 'pending')
     const rejected = p.candidates.filter((c) => c.decision === 'rejected')
     const unverified = p.documents.filter((d) => d.reviewState === 'unverified')
     const steps = [
@@ -284,8 +324,8 @@
       </section>
       <section class="card">
         <h2>待确认候选（${pending.length}）</h2>
-        ${pending.length ? pending.map((c) => `<div class="check"><input type="checkbox" aria-label="选择 ${esc(c.fieldName)}"><div><strong>${esc(c.fieldName)}</strong> <span class="meta-line">原文 ${esc(c.rawText)} ${esc(c.unit || '（单位未印）')} · ${esc(c.collectedAt)}</span><p class="meta-line">${esc(c.note)}</p></div></div>`).join('') : '<div class="empty">这个档案没有待确认候选。原件都已在资料库登记。</div>'}
-        ${pending.length ? '<div class="btn-row"><button type="button" class="ghost" disabled>确认所选（原型未接写入）</button><button type="button" class="ghost" disabled>拒收所选</button></div>' : ''}
+        ${pending.length ? pending.map((c) => `<div class="check"><input type="checkbox" data-cand="${esc(c.id)}"><div><strong>${esc(c.fieldName)}</strong>${c.demo ? ' <span class="pill">演示内存</span>' : ''} <span class="meta-line">原文 ${esc(c.rawText)} ${esc(c.unit || '（单位未印）')} · ${esc(c.collectedAt)}</span><p class="meta-line">${esc(c.note)}</p></div></div>`).join('') : '<div class="empty">这个档案没有待确认候选。原件都已在资料库登记。</div>'}
+        ${pending.length ? '<div class="btn-row"><button type="button" class="primary" data-action="confirm-candidates">确认所选（演示内存）</button><button type="button" class="ghost" data-action="reject-candidates">拒收所选</button></div>' : ''}
         ${rejected.length ? `<h3 style="margin-top:14px">已拒收（${rejected.length}）</h3>${rejected.map((c) => `<p class="meta-line">${esc(c.fieldName)}：${esc(c.note)}</p>`).join('')}` : ''}
         ${unverified.length ? `<h3 style="margin-top:14px">只有原件、未解析（${unverified.length}）</h3>${unverified.map((d) => `<p class="meta-line">${esc(d.title)} · ${esc(d.collectedAt)} · 不产生指标值</p>`).join('')}` : ''}
       </section>
@@ -378,64 +418,53 @@
   /* ---------------- 病情一图秀 ---------------- */
   function viewTimeline() {
     const p = P()
+    const groups = {}
+    p.metrics.filter((m) => m.kind === 'numeric' && p.observations.some((o) => o.metricId === m.id && o.valueNum != null)).forEach((m) => {
+      ;(groups[m.category] = groups[m.category] || []).push(m)
+    })
+    const defaultSel = ['crp', 'esr', 'ferritin', 'hgb'].filter((id) => p.metrics.some((m) => m.id === id))
     return `${profileSwitcher()}
-    ${pageHead('病情一图秀', '同一时间轴上看到复查、用药和感受；每条线按自身范围绘制，互不比较。', agentButton('timeline'))}
-    <section class="card"><div class="chart-wrap"><svg class="chart" id="timeline-chart" viewBox="0 0 1080 420" role="img" aria-label="多指标时间轴，每条线按自身范围缩放"></svg></div>
-      <div class="legend" id="timeline-legend"></div>
-      <p class="meta-line">说明：每条线按该指标全部记录的 min–max 缩放；单次记录不连线；曲线之间的高低不代表谁更严重。</p>
-    </section>`
-  }
-
-  /* ---------------- 治疗与临床（严格按 36 号四段，与 README/概要同源） ---------------- */
-  function primerSectionHtml(sec) {
-    if (!sec) return ''
-    const sources = (sec.sources || []).map((src) => {
-      const bits = [src.org, src.doc, src.version].filter(Boolean).join(' · ')
-      let link = ''
-      if (src.nolink) link = '未取得官方说明书'
-      else if (src.local) link = `<a href="${esc(src.local)}" target="_blank" rel="noopener">本地阅读 ↗</a>`
-      else if (/^https:\/\//.test(src.url || '')) link = `<a href="${esc(src.url)}" target="_blank" rel="noopener noreferrer">打开 ↗</a>`
-      return `${esc(bits)}${src.page ? ' · ' + esc(src.page) : ''}${link ? ' · ' + link : ''}`
-    }).join('<br>')
-    return `<div class="primer-block">
-      <p class="lead">${esc(sec.intro || '')}</p>
-      ${sec.points ? `<ul class="tight">${sec.points.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
-      ${sec.groups ? sec.groups.map((g) => `<h4>${esc(g.label)}</h4><ul class="tight">${g.points.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`).join('') : ''}
-      ${sec.table ? `<div class="table-wrap"><table class="data"><thead><tr>${sec.table.head.map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${sec.table.rows.map((row) => `<tr>${row.map((c) => `<td>${c && typeof c === 'object' ? esc(c.text || '') : esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : ''}
-      <p class="src">来源：${sources || '未标注'}</p>
+    ${pageHead('病情一图秀', '勾选指标看同一时间轴；每条线按自身范围缩放。', agentButton('timeline'))}
+    <div class="oc-layout">
+      <aside class="oc-side">
+        <div class="oc-hint">最多同时显示 4 条线${tip('为什么是 4 条', '超过 4 条时颜色与走向难以分辨。16 号规范要求 ≤4 条并保持列表可滚动。', 'starter docs/16-ONE-CHART-SPEC.md R7')}</div>
+        ${Object.entries(groups).map(([cat, metrics], gi) => `<details class="oc-group" ${gi === 0 ? 'open' : ''}><summary>${esc(cat)} <span class="pill">${metrics.length}</span></summary>
+          ${metrics.map((m) => `<label class="oc-item"><input type="checkbox" data-oc-metric="${esc(m.id)}" ${defaultSel.includes(m.id) ? 'checked' : ''}> <span class="dot" style="background:${['#1f6b52', '#8a4b22', '#28566f', '#8a3350', '#7a5a12'][Object.keys(groups).flat().length % 5]}"></span>${esc(m.name)}<em>${esc(m.unit || '')}</em></label>`).join('')}
+        </details>`).join('')}
+        <p class="meta-line">勾选即时更新；每条线按该指标全部记录的 min–max 缩放${tip('为什么不同线不能比较', '不同指标的量纲与参考含义不同，同一张图上“高低”只代表各自记录内的相对位置，不代表谁更严重。', '16号 §0.1 可比性合同')}。</p>
+      </aside>
+      <section class="oc-main">
+        <div class="chart-wrap"><svg class="chart" id="timeline-chart" viewBox="0 0 1080 520" role="img" aria-label="多指标时间轴，每条线按自身范围缩放"></svg></div>
+        <div class="legend" id="timeline-legend"></div>
+      </section>
     </div>`
   }
 
+  /* ---------------- 治疗记录 ---------------- */
   function viewTreatment() {
     const p = P()
     const doc = p.profileDoc
-    const primer = window.DISEASE_PRIMER || { sections: [] }
-    const byId = Object.fromEntries((primer.sections || []).map((x) => [x.id, x]))
     const planned = p.medications.filter((m) => m.eventKind === 'planned')
     const actual = p.medications.filter((m) => m.eventKind === 'actual')
     return `${profileSwitcher()}
-    ${pageHead('治疗与临床', '公共资料四段与 README/「?」同源；下面只记录本档案的原始材料。', agentButton('treatment'))}
+    ${pageHead('治疗记录', '计划与实际分开；医生原话与患者理解分栏。公共医学背景见「疾病与资源」。', agentButton('treatment'))}
     <div class="grid">
       <section class="card">
-        <h2>① 定义</h2>${primerSectionHtml(byId.definition)}
-        <h2 style="margin-top:14px">② 医学资料规范和指南情况</h2>${primerSectionHtml(byId.evidence)}
-        <h2 style="margin-top:14px">③ 目前治疗全景概要</h2>
-        ${primerSectionHtml(byId.landscape)}
-        <p class="exit-line">以上是文献与指南里列出的类别，不代表任何一项适合你。选哪一个，这一句需要问你的医生。</p>
-        <h2 style="margin-top:14px">④ 发展趋势</h2>${primerSectionHtml(byId.trend)}
-      </section>
-      <section class="card">
-        <h2>本档医生记录</h2>
-        <p>${esc(doc.diagnosisText)}</p>
+        <h2>医生记录与团队</h2>
+        <p>${esc(doc.doctorRecordText)}</p>
         <h3 style="margin-top:12px">关键原件</h3>
         <div class="list">${doc.keyReports.map((id) => { const d = p.documents.find((x) => x.id === id); return d ? `<div class="item"><div class="what"><a href="#" class="linkish" data-doc="${esc(id)}">${esc(d.title)}</a><p class="meta-line">${esc(d.collectedAt)} · ${esc(d.org)}</p></div></div>` : '' }).join('')}</div>
         <h3 style="margin-top:12px">就诊团队</h3><p class="meta-line">${doc.careTeam.map(esc).join(' · ')}</p>
-        <h3 style="margin-top:12px">我的用药与医嘱（${planned.length} 条计划 / ${actual.length} 次实际）</h3>
+      </section>
+      <section class="card">
+        <h2>用药计划（${planned.length}）</h2>
         ${planned.map((m) => `<details class="fold"><summary>${esc(m.drugName)} · ${esc(m.doseText)} · ${esc(m.startedOn)} 起</summary>
           <div class="fold-body"><div class="fold-grid">
             <div><h4>医生原话</h4><p class="quote">${m.doctorQuote ? '“' + esc(m.doctorQuote) + '”' : '未记录原文'}</p></div>
             <div><h4>患者理解</h4><p>${m.patientUnderstanding ? esc(m.patientUnderstanding) : '未记录'}</p></div>
-          </div></div></details>`).join('')}
+          </div></div></details>`).join('') || EMPTY}
+        <h2 style="margin-top:14px">实际事件（${actual.length}）</h2>
+        <div class="list">${actual.map((m) => `<div class="item"><div class="when">${esc(m.startedOn)}</div><div class="what"><p>${esc(m.drugName)} · ${esc(m.doseText)}</p></div></div>`).join('') || EMPTY}</div>
       </section>
     </div>
     <section class="card" style="margin-top:14px">
@@ -444,7 +473,130 @@
     </section>`
   }
 
-  /* ---------------- 营养支持 ---------------- */
+  /* ---------------- 临床研究（35号：建档→检索→结果分析） ---------------- */
+  function stateLabel(status) {
+    const map = { recruiting: '招募中（登记状态，未核实）', active: '活跃（未核实）', completed: '已完成', unknown: '未知' }
+    return map[status] || status
+  }
+  const STATE_CLASS = { match: '', conflict: 'bad', unknown: 'warn' }
+  const STATE_TEXT = { match: '符合', conflict: '不满足', unknown: '待确认' }
+
+  function viewTrials() {
+    const p = P()
+    const tab = state.trialTab || 'profile'
+    const profile = p.trialProfile
+    const trials = p.trials
+    const tabs = [['profile', '基础建档'], ['search', '检索'], ['analysis', '结果分析']]
+    let body = ''
+    if (tab === 'profile') {
+      body = `<div class="grid">
+        <section class="card"><h2>疾病与病程</h2>
+          <dl class="profile-dl"><dt>医生记录</dt><dd>${esc(profile.doctorRecord)}</dd><dt>病程</dt><dd>${esc(profile.diseaseDuration)}</dd><dt>共病</dt><dd>${profile.comorbidity.map(esc).join('、')}</dd></dl>
+          <h3 style="margin-top:12px">治疗线（照抄原文）</h3>
+          <div class="list">${profile.treatmentLines.map((l) => `<div class="item"><div class="what"><p>${esc(l)}</p></div></div>`).join('')}</div>
+          <h3 style="margin-top:12px">关键发现（报告原文）</h3>
+          <div class="list">${profile.keyFindings.map((l) => `<div class="item"><div class="what"><p>${esc(l)}</p></div></div>`).join('')}</div>
+          <p class="meta-line">建档只用已确认记录；待核对候选不参与匹配。</p>
+        </section>
+        <section class="card"><h2>使用边界</h2>
+          <ul class="tight">
+            <li>粗筛符合度 = 符合项 ÷ 已对照项；待确认按 0 计，只会偏低。</li>
+            <li>这不是入组资格，也不代表效果；判定归医生与研究中心。</li>
+            <li>登记状态未核实；“招募中”不等于可入组。</li>
+          </ul>
+          ${tip('待确认为什么算 0', '未知条件不能按“符合”或“不符合”填写，否则符合度会虚高。35 号规定待确认一律按 0 计。', 'starter docs/35-TRIAL-MATCHING.md')}
+        </section>
+      </div>`
+    } else if (tab === 'search') {
+      body = `<div class="banner warm">本原型未接入 unified-trial-mcp；下面 ${trials.length} 条均为 <b>合成演示</b>（DEMO- 前缀）。真实版本按四通道检索并记录每源终态。</div>
+      <div class="toolbar"><label for="trial-q">关键词</label><input id="trial-q" placeholder="如：Still 病 / IL-1（演示）"><button type="button" class="primary" disabled>检索（原型未接入）</button></div>
+      <div class="list">${trials.map((t) => trialCard(t)).join('')}</div>`
+    } else {
+      const saved = trials.filter((t) => t.saved)
+      const ranked = [...trials].sort((a, b) => b.pct - a.pct)
+      body = `<div class="grid">
+        <section class="card"><h2>按粗筛符合度排序</h2>
+          <div class="list">${ranked.map((t) => `<div class="item"><div class="when"><b class="pct">${t.pct}%</b></div><div class="what"><a href="#" class="linkish" data-trial="${esc(t.nctId)}">${esc(t.title)}</a><p class="meta-line">${esc(t.phase)} · ${esc(stateLabel(t.status))}${t.saved ? ' · 已收藏' : ''}</p><div class="bar"><i style="width:${Math.max(t.pct, 2)}%"></i></div></div></div>`).join('') || EMPTY}</div>
+          <p class="meta-line">符合度只用于排序，不是入组资格。</p>
+        </section>
+        <section class="card"><h2>已收藏（${saved.length}）</h2>
+          <div class="list">${saved.map((t) => `<div class="item"><div class="what"><a href="#" class="linkish" data-trial="${esc(t.nctId)}">${esc(t.title)}</a><p class="meta-line">${esc(t.nctId)} · ${t.pct}%</p></div></div>`).join('') || EMPTY}</div>
+          <div class="btn-row"><button type="button" class="ghost" disabled>把收藏加进复诊问题（原型未接通）</button></div>
+        </section>
+      </div>`
+    }
+    return `${profileSwitcher()}
+    ${pageHead('临床研究', '建档 → 检索 → 结果分析；输出的是带证据链的线索，不是入组资格。', agentButton('trials'))}
+    <div class="tabs" role="tablist" aria-label="临床研究分区">${tabs.map(([id, label]) => `<button role="tab" aria-selected="${tab === id}" data-action="trial-tab" data-tab="${id}">${label}</button>`).join('')}</div>
+    ${body}`
+  }
+
+  function trialCard(t) {
+    const matched = t.criteria.filter((c) => c.state === 'match').length
+    const unknown = t.criteria.filter((c) => c.state === 'unknown').length
+    return `<div class="item trial" data-trial-card="${esc(t.nctId)}">
+      <div class="what">
+        <div class="row"><b class="pct">${t.pct}%</b> <a href="#" class="linkish" data-trial="${esc(t.nctId)}">${esc(t.title)}</a> ${t.saved ? '<span class="pill">已收藏</span>' : ''}</div>
+        <p class="meta-line">${esc(t.nctId)} · ${esc(t.phase)} · ${esc(stateLabel(t.status))} · ${esc(t.sites)}</p>
+        <p class="meta-line">符合 ${matched} · 待确认 ${unknown} · 其余不满足</p>
+      </div>
+    </div>`
+  }
+
+  function openTrial(nctId) {
+    const t = P().trials.find((x) => x.nctId === nctId)
+    if (!t) return
+    pv.open({
+      key: 'trial',
+      title: t.title,
+      crumb: '临床研究',
+      render(body) {
+        body.innerHTML = `<section class="card">
+          <h2>登记信息（登记状态，未核实）</h2>
+          <dl class="profile-dl"><dt>编号</dt><dd>${esc(t.nctId)}（合成演示）</dd><dt>期别</dt><dd>${esc(t.phase)}</dd><dt>状态</dt><dd>${esc(stateLabel(t.status))}</dd><dt>地点</dt><dd>${esc(t.sites)}</dd></dl>
+          <p class="meta-line">“招募中”不等于可入组；登记 ≠ 有效 ≠ 安全。</p>
+        </section>
+        <section class="card" style="margin-top:12px">
+          <h2>粗筛符合度 ${t.pct}%</h2>
+          <p class="meta-line">这不是入组资格，也不代表效果。待确认按 0 计，因此只会偏低。</p>
+          <div class="list">${t.criteria.map((c) => `<div class="item"><div class="when"><span class="pill ${STATE_CLASS[c.state] || ''}">${esc(STATE_TEXT[c.state] || c.state)}</span></div><div class="what"><p><b>${esc(c.kind)}</b>：${esc(c.text)}</p><p class="meta-line">记录里是：${esc(c.evidence)}</p></div></div>`).join('')}</div>
+        </section>
+        <div class="btn-row" style="margin-top:12px"><button type="button" class="ghost" disabled>收藏（原型未接写入）</button><button type="button" class="ghost" disabled>生成待问问题（原型未接通）</button></div>`
+      },
+    })
+  }
+  function primerCell(c) {
+    const text = c && typeof c === 'object' ? (c.text || '') : c
+    return '<td>' + esc(text) + '</td>'
+  }
+
+  function primerTable(t) {
+    const head = t.head.map((h) => '<th>' + esc(h) + '</th>').join('')
+    const rows = t.rows.map((row) => '<tr>' + row.map(primerCell).join('') + '</tr>').join('')
+    return '<div class="table-wrap"><table class="data"><thead><tr>' + head + '</tr></thead><tbody>' + rows + '</tbody></table></div>'
+  }
+
+  function primerSource(src) {
+    const bits = [src.org, src.doc, src.version].filter(Boolean).join(' · ')
+    let link = ''
+    if (src.nolink) link = '未取得官方说明书'
+    else if (src.local) link = '<a href="' + esc(src.local) + '" target="_blank" rel="noopener">本地阅读 ↗</a>'
+    else if (/^https:\/\//.test(src.url || '')) link = '<a href="' + esc(src.url) + '" target="_blank" rel="noopener noreferrer">打开 ↗</a>'
+    return esc(bits) + (src.page ? ' · ' + esc(src.page) : '') + (link ? ' · ' + link : '')
+  }
+
+  function primerSectionHtml(sec) {
+    if (!sec) return ''
+    const sources = (sec.sources || []).map(primerSource).join('<br>')
+    let body = '<p class="lead">' + esc(sec.intro || '') + '</p>'
+    if (sec.points) body += '<ul class="tight">' + sec.points.map((x) => '<li>' + esc(x) + '</li>').join('') + '</ul>'
+    if (sec.groups) body += sec.groups.map((g) => '<h4>' + esc(g.label) + '</h4><ul class="tight">' + g.points.map((x) => '<li>' + esc(x) + '</li>').join('') + '</ul>').join('')
+    if (sec.table) body += primerTable(sec.table)
+    body += '<p class="src">来源：' + (sources || '未标注') + '</p>'
+    return '<div class="primer-block">' + body + '</div>'
+  }
+
+/* ---------------- 营养支持 ---------------- */
   function viewNutrition() {
     const p = P()
     const weights = p.nutrition.filter((n) => n.weightKg != null)
@@ -525,7 +677,8 @@
         <h2>疾病概要</h2>
         <p class="sub">四段内容与 README 同源，属公共背景，不是对个人的判断。</p>
         <div class="btn-row"><button type="button" class="primary" data-primer-open>打开完整概要（含指南链接）</button></div>
-        <ul class="small"><li>定义：罕见、病因不明的自身炎症性疾病，诊断需排除其他疾病。</li><li>指南：NHC 2025 官方 PDF 已随包；EULAR/PReS 2024 为国际推荐。</li><li>治疗：只列文献类别，不排序、不推荐。</li><li>趋势：只写已发生的版本/检索事实。</li></ul>
+        <div id="primer-inline">${((window.DISEASE_PRIMER || {}).sections || []).map(primerSectionHtml).join('')}</div>
+        <p class="exit-line">以上是文献与指南里列出的类别，不代表任何一项适合你。选哪一个，这一句需要问你的医生。</p>
       </section>
       <section class="card">
         <h2>本地与官方指南</h2>
@@ -538,6 +691,48 @@
       </section>
     </div>
     <div class="banner soft" style="margin-top:14px">支持资源与患者组织只作公开线索，未核实可及性，不作推荐。临床研究入口属二期，一期不显示空白占位。</div>`
+  }
+
+  /* 手工记录演示：生产版 POST /api/aosd/narratives → config.root SQLite；原型仅内存。 */
+  function openManualRecord() {
+    pv.open({
+      key: 'manual-record',
+      title: '手工记一段（演示）',
+      crumb: '本人与代记',
+      render(body) {
+        body.innerHTML = `<section class="card">
+          <h2>记一段感受</h2>
+          <p class="meta-line">生产版会写入 config.root 的 SQLite 唯一事实库；本原型只存本页内存，关闭即失。</p>
+          <label class="oc-item" style="border:0"><input type="radio" name="mr-kind" value="self" checked> 本人自述</label>
+          <label class="oc-item" style="border:0"><input type="radio" name="mr-kind" value="family_relay"> 家属转述本人</label>
+          <label class="oc-item" style="border:0"><input type="radio" name="mr-kind" value="family_observation"> 家属观察/感受</label>
+          <label class="sr-only" for="mr-date">日期</label>
+          <input id="mr-date" type="date" style="width:100%;margin:8px 0;padding:8px;border:1px solid var(--line);border-radius:8px;font:inherit" value="${new Date().toISOString().slice(0, 10)}">
+          <label class="sr-only" for="mr-text">内容</label>
+          <textarea id="mr-text" rows="4" placeholder="原话照抄，不推断病名或原因" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font:inherit"></textarea>
+          <label class="oc-item" style="border:0"><input type="checkbox" id="mr-private" checked> 私密（默认不导出、不发送 AI）</label>
+          <div class="btn-row"><button type="button" class="ghost" data-pv-close>取消</button><button type="button" class="primary" id="mr-save">保存到演示内存</button></div>
+        </section>`
+        body.querySelector('#mr-save').addEventListener('click', () => {
+          const text = body.querySelector('#mr-text').value.trim()
+          if (!text) { notify('内容不能为空。'); return }
+          const kind = body.querySelector('input[name="mr-kind"]:checked').value
+          state.demoNarratives.push({
+            id: 'demo-n-' + Date.now().toString(36), contentKind: kind,
+            experiencedBy: kind === 'family_observation' ? 'family' : 'patient',
+            speaker: kind === 'self' ? 'patient' : (kind === 'family_relay' ? 'patient' : 'family'),
+            recordedBy: kind === 'self' ? 'patient' : 'family',
+            occurredAt: body.querySelector('#mr-date').value || new Date().toISOString().slice(0, 10),
+            recordedAt: new Date().toISOString(),
+            text, impact: null, isPrivate: body.querySelector('#mr-private').checked,
+            revision: 1, supersedesId: null, reviewState: 'confirmed', demo: true,
+          })
+          notify('已保存到演示内存。生产版经 /api/aosd/narratives 写入 SQLite 唯一事实库。')
+          pv.close()
+          render()
+        })
+      },
+    })
   }
 
   /* ---------------- 报告详情（整页） ---------------- */
@@ -617,12 +812,13 @@
     metrics: viewMetrics,
     timeline: viewTimeline,
     treatment: viewTreatment,
+    trials: viewTrials,
     nutrition: viewNutrition,
     mind: viewMind,
     visit: viewVisit,
     resources: viewResources,
   }
-  const TITLES = { dashboard: '看板', voices: '本人与代记', day: '同日经过', documents: '资料上传与核对', metrics: '检查与指标', timeline: '病情一图秀', treatment: '治疗与临床', nutrition: '营养支持', mind: '心理支持', visit: '复诊准备', resources: '疾病与资源' }
+  const TITLES = { dashboard: '看板', voices: '本人与代记', day: '同日经过', documents: '资料上传与核对', metrics: '检查与指标', timeline: '病情一图秀', treatment: '治疗记录', trials: '临床研究', nutrition: '营养支持', mind: '心理支持', visit: '复诊准备', resources: '疾病与资源' }
 
   function renderNav() {
     document.getElementById('nav').innerHTML = PAGES.map(([key, label, ic]) =>
@@ -634,6 +830,8 @@
     document.getElementById('main').innerHTML = (VIEWS[state.view] || viewDashboard)()
     document.getElementById('topbar-note').textContent = '记录有来源，判断交给医生。'
     document.getElementById('agent-state').textContent = state.agentOpen ? '演示 · 未连接宿主' : '演示 · 未连接宿主'
+    bindTips(document.getElementById('main'))
+    bindTimelineControls()
     bindMetricCards()
     if (state.view === 'timeline') {
       paintTimeline()
@@ -645,21 +843,22 @@
     const p = P()
     const svg = document.getElementById('timeline-chart')
     if (!svg) return
-    const chosen = ['crp', 'esr', 'ferritin', 'hgb']
-    const series = chosen
+    const checked = [...document.querySelectorAll('[data-oc-metric]:checked')].map((c) => c.dataset.ocMetric).slice(0, 4)
+    const series = checked
       .map((id) => ({ metric: p.metrics.find((m) => m.id === id), obs: metricSeries(p, id) }))
       .filter((s) => s.metric && s.obs.length)
+    const colors = ['#1f6b52', '#8a4b22', '#28566f', '#8a3350']
+    const narrow = (svg.parentElement?.clientWidth || window.innerWidth) < 640
     const dates = [...new Set(series.flatMap((s) => s.obs.map((o) => o.collectedAt)))].sort()
+    const CH = 520, X0 = 62, X1 = 900, Y0 = 132, Y1 = 466
     if (!dates.length || !series.length) {
-      svg.innerHTML = '<text x="490" y="210" text-anchor="middle" fill="#5f6f66">这个档案还没有足够的数值记录。</text>'
+      svg.innerHTML = `<text x="500" y="${CH / 2}" text-anchor="middle" fill="#5f6f66">勾选左侧指标后这里会出现时间轴。</text>`
+      const legend = document.getElementById('timeline-legend'); if (legend) legend.innerHTML = ''
       return
     }
     const t0 = new Date(dates[0] + 'T00:00:00').getTime()
     const t1 = new Date(dates[dates.length - 1] + 'T00:00:00').getTime()
-    const CW = 1080, CH = 420, X0 = 62, X1 = 900, Y0 = 132, Y1 = 366
     const x = (d) => X0 + (new Date(d + 'T00:00:00').getTime() - t0) / (t1 - t0 || 1) * (X1 - X0)
-    const colors = ['#1f6b52', '#8a4b22', '#28566f', '#8a3350']
-    const narrow = (svg.parentElement?.clientWidth || window.innerWidth) < 640
     let out = ''
     series.forEach((s, i) => {
       const vals = s.obs.map((o) => o.valueNum)
@@ -672,10 +871,9 @@
       pts.forEach(([px, py], j) => {
         out += `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="4" fill="${colors[i % 4]}"><title>${esc(s.metric.name)} ${esc(s.obs[j].rawText)} ${esc(s.metric.unit || '')} ${esc(s.obs[j].collectedAt)}</title></circle>`
       })
-      const last = pts[pts.length - 1]
-      /* 宽屏：右侧独立列错行；窄屏：数值进图例，图内不画右列标签 */
       if (!narrow) {
-        const labelY = 150 + i * 22
+        const last = pts[pts.length - 1]
+        const labelY = 170 + i * 24
         out += `<line x1="${last[0].toFixed(1)}" y1="${last[1].toFixed(1)}" x2="${(X1 + 8).toFixed(1)}" y2="${labelY.toFixed(1)}" stroke="${colors[i % 4]}" stroke-width="1" stroke-dasharray="2 3" opacity=".55"/>`
         out += `<text x="${(X1 + 12).toFixed(1)}" y="${labelY.toFixed(1)}" text-anchor="start" font-size="12" fill="${colors[i % 4]}">${esc(s.metric.name)} ${esc(s.obs[s.obs.length - 1].rawText)} ${esc(s.metric.unit || '')}</text>`
       }
@@ -695,6 +893,16 @@
       const suffix = narrow ? ` · 最近 ${esc(latest.rawText)} ${esc(s.metric.unit || '')}` : ''
       return `<span><i style="background:${colors[i % 4]}"></i>${esc(s.metric.name)}（${esc(s.metric.unit || '')}）${suffix}</span>`
     }).join('')
+  }
+
+  function bindTimelineControls() {
+    const boxes = [...document.querySelectorAll('[data-oc-metric]')]
+    boxes.forEach((box) => box.addEventListener('change', () => {
+      const checked = boxes.filter((b) => b.checked)
+      if (checked.length > 4) { box.checked = false; notify('最多同时显示 4 条线；先取消一条再选。') }
+      paintTimeline()
+    }))
+    document.querySelectorAll('.oc-group > summary').forEach((sum) => sum.addEventListener('click', () => setTimeout(paintTimeline, 30)))
   }
 
   function bindMetricCards() {
@@ -745,12 +953,14 @@
 
   function bind() {
     document.addEventListener('click', (event) => {
-      const target = event.target.closest('[data-view],[data-profile],[data-action],[data-doc],[data-discuss],[data-primer-open]')
+      const target = event.target.closest('[data-view],[data-profile],[data-action],[data-doc],[data-discuss],[data-primer-open],[data-trial]')
       if (!target) return
       if (target.matches('[data-primer-open]')) return
       if (target.dataset.view) { event.preventDefault(); go(target.dataset.view); return }
       if (target.dataset.profile) { event.preventDefault(); setProfile(target.dataset.profile); return }
       if (target.dataset.doc) { event.preventDefault(); openDocument(target.dataset.doc); return }
+      if (target.dataset.trial) { event.preventDefault(); openTrial(target.dataset.trial); return }
+      if (target.dataset.action === 'trial-tab') { event.preventDefault(); state.trialTab = target.dataset.tab; render(); return }
       if (target.dataset.discuss) { event.preventDefault(); openAgent(); return }
       if (target.dataset.action === 'go') { event.preventDefault(); go(target.dataset.view || 'dashboard'); return }
       if (target.dataset.action === 'quick-record') { event.preventDefault(); go('voices'); return }
@@ -762,6 +972,25 @@
       if (target.dataset.action === 'manual') {
         event.preventDefault()
         notify('演示：手工补录入口。真实版本保存到 config.root 的唯一事实库，本原型不写盘。')
+        return
+      }
+      if (target.dataset.action === 'confirm-candidates' || target.dataset.action === 'reject-candidates') {
+        event.preventDefault()
+        const ids = [...document.querySelectorAll('[data-cand]:checked')].map((c) => c.dataset.cand)
+        if (!ids.length) { notify('先勾选要处理的候选。'); return }
+        const decision = target.dataset.action === 'confirm-candidates' ? 'accepted' : 'rejected'
+        for (const id of ids) {
+          const c = state.demoCandidates.find((x) => x.id === id)
+          if (c) c.decision = decision
+          else notify(`内置演示候选 ${id} 的确认需生产版经 /api/aosd/candidates/:id/decision 写入 SQLite，本原型不改合成数据。`)
+        }
+        notify(decision === 'accepted' ? '已确认所选（演示内存）；生产版接受后原值进入检查与指标。' : '已拒收所选（零副作用）。')
+        render()
+        return
+      }
+      if (target.dataset.action === 'manual-record') {
+        event.preventDefault()
+        openManualRecord()
         return
       }
     })
@@ -788,9 +1017,22 @@
     })
     document.getElementById('agent-send').addEventListener('click', () => {
       const value = document.getElementById('agent-input').value.trim()
-      document.getElementById('agent-state').textContent = value
-        ? '演示：已收集草稿，未连接模型'
-        : '演示：草稿为空，没有发送'
+      if (!value) {
+        document.getElementById('agent-state').textContent = '演示：草稿为空，没有发送'
+        return
+      }
+      /* 演示链路：AI 回复是候选 → 用户确认才入事实；这里生成一条待核对候选进入「资料上传与核对」。 */
+      state.demoCandidates.push({
+        id: 'demo-c-' + Date.now().toString(36),
+        fieldName: '手工/对话整理',
+        rawText: value.slice(0, 60),
+        valueText: null, valueNum: null, unit: null, refLow: null, refHigh: null,
+        collectedAt: new Date().toISOString().slice(0, 10),
+        decision: 'pending',
+        note: '来自 AI 演示草稿；逐项确认后才可入库（生产版走 /api/aosd/candidates/:id/decision）。',
+      })
+      document.getElementById('agent-state').textContent = '演示：已生成 1 条待核对候选（未连接模型）'
+      notify('已生成待核对候选，请到「资料上传与核对」逐项确认；候选本身不进入记录。')
     })
     document.getElementById('settings-btn').addEventListener('click', () => {
       pv.open({

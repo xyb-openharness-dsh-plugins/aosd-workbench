@@ -2187,7 +2187,7 @@ window.DEMO_DATA = {
       ],
       "profileDoc": {
         "definition": "成人斯蒂尔病是一种罕见、病因不明的自身炎症性疾病。",
-        "diagnosisText": "医生记录：成人斯蒂尔病（2026-05，首次风湿免疫科门诊）。",
+        "doctorRecordText": "医生记录：成人斯蒂尔病（2026-05，首次风湿免疫科门诊）。",
         "keyReports": [
           "A-doc-lab-2026-05-04",
           "A-doc-note-2026-10-09"
@@ -2293,6 +2293,110 @@ window.DEMO_DATA = {
           "answerReplyId": null,
           "createdAt": "2026-10-12",
           "ord": 5
+        }
+      ],
+      "trialProfile": {
+        "doctorRecord": "成人斯蒂尔病（医生记录 2026-05）",
+        "diseaseDuration": "2026-04 起反复发热/皮疹/关节痛",
+        "treatmentLines": [
+          "泼尼松（05-08 起，已减至 15mg）",
+          "托珠单抗 每4周（05-15 起，6 次）",
+          "甲氨蝶呤 10mg 每周（09-11 起）"
+        ],
+        "keyFindings": [
+          "血清铁蛋白升高（峰值 1850 ng/mL）",
+          "CRP/ESR 升高后回落",
+          "白细胞与中性粒细胞升高"
+        ],
+        "comorbidity": [
+          "无已知慢性病（合成）"
+        ],
+        "notes": "合成档案，仅演示建档结构；试验数据未查询。"
+      },
+      "trials": [
+        {
+          "nctId": "DEMO-NCT-001",
+          "title": "IL-1 抑制剂在活动性 Still 病中的 II 期研究（合成）",
+          "phase": "II",
+          "status": "recruiting",
+          "sites": "多中心（不含中国，合成）",
+          "conditions": [
+            "成人斯蒂尔病"
+          ],
+          "criteria": [
+            {
+              "kind": "诊断",
+              "text": "确诊 Still 病",
+              "state": "match",
+              "evidence": "本档医生记录 2026-05"
+            },
+            {
+              "kind": "年龄",
+              "text": "18–75 岁",
+              "state": "match",
+              "evidence": "出生 1992"
+            },
+            {
+              "kind": "疾病活动",
+              "text": "活动性疾病证据",
+              "state": "unknown",
+              "evidence": "本台不判定活动度，需医生确认"
+            },
+            {
+              "kind": "用药洗脱",
+              "text": "既往生物制剂洗脱期",
+              "state": "conflict",
+              "evidence": "正在使用托珠单抗（05-15 起）"
+            }
+          ],
+          "pct": 50,
+          "saved": true
+        },
+        {
+          "nctId": "DEMO-NCT-002",
+          "title": "慢性关节炎型 Still 病的观察性队列（合成）",
+          "phase": "观察性",
+          "status": "active",
+          "sites": "欧洲（合成）",
+          "conditions": [
+            "Still 病"
+          ],
+          "criteria": [
+            {
+              "kind": "诊断",
+              "text": "确诊 Still 病",
+              "state": "match",
+              "evidence": "本档医生记录 2026-05"
+            },
+            {
+              "kind": "关节炎为主",
+              "text": "以关节炎为主要表现",
+              "state": "unknown",
+              "evidence": "本档为系统型，需医生判断"
+            }
+          ],
+          "pct": 50,
+          "saved": false
+        },
+        {
+          "nctId": "DEMO-NCT-003",
+          "title": "MAS 并发症登记研究（合成）",
+          "phase": "登记",
+          "status": "completed",
+          "sites": "美国（合成）",
+          "conditions": [
+            "MAS"
+          ],
+          "criteria": [
+            {
+              "kind": "诊断",
+              "text": "MAS 诊断",
+              "state": "conflict",
+              "evidence": "本档无 MAS 记录"
+            }
+          ],
+          "pct": 0,
+          "saved": false
         }
       ],
       "snapshots": [
@@ -3762,7 +3866,7 @@ window.DEMO_DATA = {
       ],
       "profileDoc": {
         "definition": "成人斯蒂尔病是一种罕见、病因不明的自身炎症性疾病。",
-        "diagnosisText": "医生记录：成人斯蒂尔病（2026-05，首次风湿免疫科门诊）。",
+        "doctorRecordText": "医生记录：成人斯蒂尔病（2026-05，首次风湿免疫科门诊）。",
         "keyReports": [
           "B-doc-lab-2026-05-19",
           "B-doc-us-2026-05-21"
@@ -3848,6 +3952,56 @@ window.DEMO_DATA = {
           "answerReplyId": null,
           "createdAt": "2026-10-05",
           "ord": 4
+        }
+      ],
+      "trialProfile": {
+        "doctorRecord": "成人斯蒂尔病（医生记录 2026-05）",
+        "diseaseDuration": "2026-05 起关节炎为主",
+        "treatmentLines": [
+          "泼尼松（05-20 起，已减至 10mg）",
+          "甲氨蝶呤 每周（05-20 起，08-12 加量）"
+        ],
+        "keyFindings": [
+          "RF 轻度升高",
+          "ESR/CRP 波动"
+        ],
+        "comorbidity": [
+          "无已知慢性病（合成）"
+        ],
+        "notes": "合成档案；试验数据未查询。"
+      },
+      "trials": [
+        {
+          "nctId": "DEMO-NCT-004",
+          "title": "关节炎型 Still 病 TNF 抑制剂研究（合成）",
+          "phase": "II",
+          "status": "recruiting",
+          "sites": "多中心（合成）",
+          "conditions": [
+            "Still 病"
+          ],
+          "criteria": [
+            {
+              "kind": "诊断",
+              "text": "确诊 Still 病",
+              "state": "match",
+              "evidence": "本档医生记录 2026-05"
+            },
+            {
+              "kind": "关节炎为主",
+              "text": "以关节炎为主要表现",
+              "state": "match",
+              "evidence": "医生记录 2026-05；皮疹轻微"
+            },
+            {
+              "kind": "排除生物制剂",
+              "text": "未用过 TNF 抑制剂",
+              "state": "match",
+              "evidence": "用药记录无 TNF 抑制剂"
+            }
+          ],
+          "pct": 100,
+          "saved": true
         }
       ],
       "snapshots": [

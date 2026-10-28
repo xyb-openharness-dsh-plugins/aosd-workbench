@@ -38,14 +38,16 @@ check(!/临床试验区域/.test(settings) && !/研究匹配入口/.test(setting
 check(!/只保留公共线索位置/.test(scenarios), '一期场景仍残留研究占位')
 
 const app = read('prototypes/v0.2/app.js')
-const requiredPages = ['dashboard', 'voices', 'day', 'documents', 'metrics', 'timeline', 'treatment', 'nutrition', 'mind', 'visit', 'resources']
+const requiredPages = ['dashboard', 'voices', 'day', 'documents', 'metrics', 'timeline', 'treatment', 'trials', 'nutrition', 'mind', 'visit', 'resources']
 for (const page of requiredPages) {
   check(app.includes(`['${page}',`), `导航缺页面 ${page}`)
 }
 check(/viewTimeline/.test(app) && /monotonePath/.test(app), '一图秀未实现')
 check(/metricCards/.test(app) && /rotateY\(180deg\)/.test(read('prototypes/v0.2/style.css')), '指标卡缺少翻面实现')
-check(/primerSectionHtml\(byId\.definition\)/.test(app) && /byId\.landscape/.test(app) && /byId\.trend/.test(app), '临床页未按36号四段同源')
+check(/viewTrials/.test(app) && /基础建档/.test(app) && /结果分析/.test(app), '临床研究缺三页结构')
+check(/data-primer-open/.test(app) && /DISEASE_PRIMER/.test(app), '36号疾病概要入口缺失')
 check(/viewNutrition/.test(app) && /viewMind/.test(app), '营养或心理页缺失')
+check(/openManualRecord/.test(app) && /demoCandidates/.test(app), '手工/AI写入演示链缺失')
 check(/data-action="upload"/.test(app) && /逐项确认/.test(app), '上传-解析-确认闭环缺失')
 check(/本地阅读/.test(interaction) && /官方 PDF/.test(interaction), '指南缺本地/官方双入口')
 check(!spec.includes('G1 已签') && !interaction.includes('已签认，不能'), '草案不得冒充已签G1')
