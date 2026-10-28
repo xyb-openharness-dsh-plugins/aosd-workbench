@@ -6,14 +6,14 @@
 | --- | --- | --- | --- |
 | M0 | 领取、starter init、原创九件核心文档、宿主前置、staticPass | Issue #51 + `npm run check` 退出码0/staticPass:true + `npm test` 7/7 | ✅ 实测完成（仅骨架） |
 | M1 | 医学十主题、用户研究证据分层、样板与基准对比、SPEC/交互路径 | 三路已合流；三轮独立评审修订完成（患者评审BLOCK→READY，HVT B1/G2/W3/U2→待最终针对性复核）；检查+测试10/10；**G1 签认** | 🔧 文件待最终复核，G1未签 |
-| M2 | 唯一演示源、HTML 四件套、整页/折叠/窄宽/原值表/AI、走查与截图 | 48组无头走查0错误/0溢出；11张实渲截图；独立视觉评审因供应商不可用**未做**；**G2 待签** | 🔧 文件完成，G2未签 |
-| M3 | 0001 迁移与 freeze-contract | **G3 签认**、sha256、判读列断言 | ⏳ 未开始 |
-| M4 | 四通道采集与四件套临床快照 | manifest=jsonl=sqlite；FAILED/未配置分开 | ⏳ 未开始 |
-| M5 | 七步移植、宿主链路、MinerU、apiBase、五套测试、parity | V1 check/test/audit/HVT；不写装机通过 | ⏳ 未开始 |
-| M6 | 升版打包、真实 tgz 装机、重启后新会话、真机走查 | V2 配置/加载证据；V3 用户实机确认 | ⏳ 未开始 |
-| M7 | tag、Release、tgz/sha256、CHANGELOG | 实际 GitHub 链接与资产校验 | ⏳ 未开始 |
-| M8 | BACKLOG 只改状态列 | 先 pull main，经 PR 回填版本/日期/依据 | ⏳ 未开始 |
-| M9 | 项目/脚手架经验回流 | 可断言优先，starter check/test；至少一项下轮直接受益 | ⏳ 未开始 |
+| M2 | 唯一演示源、HTML 四件套、整页/折叠/窄宽/原值表/AI、走查与截图 | v0.4：72组走查0错误/0溢出；12页；一图秀/指标卡/试验三页/写入闭环截图 | ✅ 文件完成（G2 待用户确认） |
+| M3 | 0001 迁移与 freeze-contract | `schema/migrations/0001_initial.sql` + freeze sha256 + 禁判读列扫描 + 27项存储测试 | ✅ 已建（用户 2026-10-27 指示启用 SQLite 唯一存储） |
+| M4 | 四通道采集与四件套临床快照 | `scripts/fetch-aosd-trials-2026.mjs` → manifest/jsonl/sqlite/README；2026-10-28 快照 2 条（chictr SUCCESS，ictrp FAILED/ctv NO_RESULTS/chinadrugtrials DENIED），三载体一致 | ✅ 已采（在线源有失败，如实记录） |
+| M5 | 七步移植、宿主链路、MinerU、apiBase、五套测试、parity | public/ 12页同源移植；client iframe → /api/aosd/ui/；静态路由+资产白名单；`npm run check` 绿、`npm test` 28/28 | 🔧 开发版已移植（MinerU 未接、Native Agent 未接） |
+| M6 | 升版打包、真实 tgz 装机、重启后新会话、真机走查 | v0.5.0 tgz 已装入 Desktop web profile 且 bundles 登记；**界面加载需用户完全退出重开 Desktop**；V3 业务走查未做 | 🔧 已装，待重启验收 |
+| M7 | tag、Release、tgz/sha256、CHANGELOG | v0.5.0 tag + [Release](https://github.com/xyb-openharness-dsh-plugins/aosd-workbench/releases/tag/v0.5.0)（tgz + .sha256） | ✅ 已发布 |
+| M8 | BACKLOG 只改状态列 | [PR #52](https://github.com/xyb-openharness-dsh-plugins/.github/pull/52)：仅第4行状态列 ⬜→🔵（v0.5.0/日期/Issue #51） | ✅ 已提 PR（待合） |
+| M9 | 项目/脚手架经验回流 | [starter PR #3](https://github.com/xyb-openharness-dsh-plugins/xyb-workbench-starter/pull/3)：单行 ROUTES 修复 + 39号 toggletip + L51/L52；starter check 绿、66/66 | ✅ 已提 PR（待合） |
 
 ## 当前交接
 
