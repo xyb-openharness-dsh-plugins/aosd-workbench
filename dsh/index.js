@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import * as store from './store.js'
 import { isStoreError } from './store.js'
 import { serveStatic } from './static.js'
+import { createDispatcher } from './routes.js'
 
 export const name = 'aosd-main'
 export const inject = ['webServer', 'connection']
@@ -68,18 +69,14 @@ export function apply(ctx) {
     }
   }
 
-  ctx.webServer.register({
-    kind: 'prefix', path: '/api/aosd',
-    async handler(req, res) {
-      let pathname
-      try { pathname = new URL(req.url, 'http://local').pathname } catch { return fail(res, 'bad_request', '非法请求路径', 400) }
-      if (pathname.startsWith('/api/aosd/ui') || pathname.startsWith('/api/aosd/assets')) {
-        if (serveStatic(req, res, staticOpts)) return
-        return fail(res, 'not_found', '静态资源不存在', 404)
-      }
-      await dispatchApi(req, res, pathname)
-    },
-  }, 'aosd api + static')
+  const handle = createDispatcher({
+    apiRoutes,
+    serveStatic: (req, res) => serveStatic(req, res, staticOpts),
+    auth: (req) => ctx.connection?.requestRejection?.(req),
+    sendJson: send,
+    notFound: (res, message) => fail(res, 'not_found', message, 404),
+  })
+  ctx.webServer.register({ kind: 'prefix', path: '/api/aosd', handler: handle }, 'aosd api + static')
 
   json('/api/aosd/health', 'GET', (req, res) => {
     if (req.method !== 'GET') return fail(res, 'method_not_allowed', '仅支持 GET', 405)

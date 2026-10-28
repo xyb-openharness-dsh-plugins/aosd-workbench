@@ -158,3 +158,31 @@ test('静态路由：UI 注入版本、指南 PDF 白名单、穿越拦截', asy
   const post = fake()
   assert.equal(serveStatic({ method: 'POST', url: '/api/aosd/ui/' }, post.res, opts), false)
 })
+
+test('单前缀分发：health 不被静态截住、UI 优先、未知 404、鉴权 401', async () => {
+  const { createDispatcher } = await import('../dsh/routes.js')
+  const calls = []
+  const apiRoutes = new Map([
+    ['GET /api/aosd/health', async (req, res) => { calls.push('health'); res.writeHead(200, { 'content-type': 'application/json' }); res.end('{"ok":true}') }],
+  ])
+  const res = () => { const state = { status: null, head: null, text: '' }; const r = {
+    writeHead(s, h) { state.status = s; state.head = h || {} }, end(b) { state.text += b || '' },
+    write(b) { state.text += b || '' }, on() { return r }, once() { return r }, emit() { return true },
+    get status() { return state.status }, get head() { return state.head }, get text() { return state.text } }
+    return r }
+  const mk = (url, method = 'GET', authReject) => createDispatcher({
+    apiRoutes,
+    serveStatic: (req) => req.url.startsWith('/api/aosd/ui') ? (req.res.writeHead(200, { 'content-type': 'text/html' }), req.res.end('UI'), true) : false,
+    auth: () => authReject,
+    sendJson: (r2, status, body) => { r2.writeHead(status, { 'content-type': 'application/json' }); r2.end(JSON.stringify(body)) },
+    notFound: (r2, message) => { r2.writeHead(404, {}); r2.end(message) },
+  })
+  const h = res(); await mk('/api/aosd/health')({ url: '/api/aosd/health', method: 'GET', res: h }, h)
+  assert.equal(h.status, 200); assert.equal(h.text, '{"ok":true}'); assert.deepEqual(calls, ['health'])
+  const ui = res(); await mk('/api/aosd/ui/')({ url: '/api/aosd/ui/', method: 'GET', res: ui }, ui)
+  assert.equal(ui.status, 200); assert.equal(ui.text, 'UI')
+  const miss = res(); await mk('/api/aosd/nope')({ url: '/api/aosd/nope', method: 'GET', res: miss }, miss)
+  assert.equal(miss.status, 404)
+  const denied = res(); await mk('/api/aosd/health', 'GET', 401)({ url: '/api/aosd/health', method: 'GET', res: denied }, denied)
+  assert.equal(denied.status, 401)
+})
