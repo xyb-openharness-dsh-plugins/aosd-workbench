@@ -2,6 +2,14 @@
 
 只增不删；每条写清"改了什么 + 为什么 + 用户可见结果"。版本号与 VERSION、package.json 三处必须一致。
 
+## 0.5.2 — 2026-10-28
+
+- 宿主路由改为单前缀 /api/aosd + 内部分发（静态子路径优先，API 精确匹配），彻底避免多前缀注册顺序导致 health 404。
+
+## 0.5.1 — 2026-10-28
+
+- 修复装机后“服务连接失败”假状态：静态路由不再注册 /api/aosd/ 全前缀（会截住 health 并 404）；客户端改为以 iframe onLoad 为准，health 不再作为 UI 门槛。
+
 ## 0.5.0 — 2026-10-28
 
 - M5 开发版：原型移植 public/（12 页逐字符同源），Desktop 客户端改 iframe 加载 /api/aosd/ui/；服务端注入 __VERSION_DISPLAY__；新增公共指南白名单路由 /api/aosd/assets/guidebooks/。品牌定稿小炎宝 FlamePal。

@@ -41,36 +41,45 @@ export function apply(ctx) {
   const db = store.openStore(ctx.config?.root ? join(ctx.config.root, 'aosd.sqlite') : ':memory:')
 
   const staticOpts = { version: manifest.version, buildDate: manifest.buildDate }
-  ctx.webServer.register({
-    kind: 'prefix', path: '/api/aosd/',
-    handler(req, res) {
-      const reject = ctx.connection?.requestRejection?.(req)
-      if (reject !== undefined && !String(req.url).startsWith('/api/aosd/ui')) return send(res, reject, { error: { code: 'auth_required', message: 'Authentication required' } })
-      if (serveStatic(req, res, staticOpts)) return
-      fail(res, 'not_found', '未知接口', 404)
-    },
-  }, 'aosd static + api')
-
+  /* 单前缀 + 内部分发（同家族底本）：宿主只注册 /api/aosd 一条 prefix，
+     内部先认静态子路径，再按「方法 + 精确路径」查 API 表。
+     这样不会出现“静态全前缀先截住 health 返回 404”的顺序问题
+     （2026-10-28 装机实测：客户端因此进入服务连接失败假状态）。 */
+  const apiRoutes = new Map()
   const json = (path, method, handler) => {
-    ctx.webServer.register({
-      kind: 'exact', path, method: undefined,
-      async handler(req, res) {
-        const reject = ctx.connection?.requestRejection?.(req)
-        if (reject !== undefined) return send(res, reject, { error: { code: 'auth_required', message: 'Authentication required' } })
-        try {
-          await handler(req, res)
-        } catch (error) {
-          if (isStoreError(error)) {
-            const status = error.code === 'store/not_found' ? 404 : error.code === 'store/conflict' ? 409 : 400
-            return send(res, status, { error: { code: error.code, message: error.message, retryable: false } })
-          }
-          if (error.code === 'payload_too_large') return fail(res, 'payload_too_large', '请求体过大', 413)
-          if (error.code === 'bad_json' || error.code === 'empty_body') return fail(res, error.code, error.message, 400)
-          send(res, 500, { error: { code: 'internal', message: '服务器内部错误', retryable: false } })
-        }
-      },
-    }, `aosd ${method} ${path}`)
+    apiRoutes.set(`${method} ${path}`, handler)
   }
+
+  async function dispatchApi(req, res, pathname) {
+    const reject = ctx.connection?.requestRejection?.(req)
+    if (reject !== undefined) return send(res, reject, { error: { code: 'auth_required', message: 'Authentication required' } })
+    const handler = apiRoutes.get(`${req.method} ${pathname}`)
+    if (!handler) return fail(res, 'not_found', '未知接口', 404)
+    try {
+      await handler(req, res)
+    } catch (error) {
+      if (isStoreError(error)) {
+        const status = error.code === 'store/not_found' ? 404 : error.code === 'store/conflict' ? 409 : 400
+        return send(res, status, { error: { code: error.code, message: error.message, retryable: false } })
+      }
+      if (error.code === 'payload_too_large') return fail(res, 'payload_too_large', '请求体过大', 413)
+      if (error.code === 'bad_json' || error.code === 'empty_body') return fail(res, error.code, error.message, 400)
+      send(res, 500, { error: { code: 'internal', message: '服务器内部错误', retryable: false } })
+    }
+  }
+
+  ctx.webServer.register({
+    kind: 'prefix', path: '/api/aosd',
+    async handler(req, res) {
+      let pathname
+      try { pathname = new URL(req.url, 'http://local').pathname } catch { return fail(res, 'bad_request', '非法请求路径', 400) }
+      if (pathname.startsWith('/api/aosd/ui') || pathname.startsWith('/api/aosd/assets')) {
+        if (serveStatic(req, res, staticOpts)) return
+        return fail(res, 'not_found', '静态资源不存在', 404)
+      }
+      await dispatchApi(req, res, pathname)
+    },
+  }, 'aosd api + static')
 
   json('/api/aosd/health', 'GET', (req, res) => {
     if (req.method !== 'GET') return fail(res, 'method_not_allowed', '仅支持 GET', 405)
