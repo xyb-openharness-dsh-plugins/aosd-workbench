@@ -5,6 +5,7 @@ import * as store from './store.js'
 import { isStoreError } from './store.js'
 import { serveStatic } from './static.js'
 import { createDispatcher } from './routes.js'
+import * as mineru from './mineru.js'
 
 export const name = 'aosd-main'
 export const inject = ['webServer', 'connection']
@@ -102,6 +103,72 @@ export function apply(ctx, config = {}) {
   json('/api/aosd/health', 'GET', (req, res) => {
     if (req.method !== 'GET') return fail(res, 'method_not_allowed', '仅支持 GET', 405)
     send(res, 200, { ok: true, version: manifest.version, apiVersion: 'v1', capabilities: ['health', 'write'], database: db ? 'open' : (dbError ? 'error' : 'lazy'), dir: config?.root || null })
+  })
+
+  /* ---------- 模块：MinerU 设置与解析（显式授权，失败不产候选） ---------- */
+  json('/api/aosd/settings/mineru', 'GET', (req, res) => {
+    if (req.method !== 'GET') return fail(res, 'method_not_allowed', '仅支持 GET', 405)
+    const root = config?.root || '.'
+    send(res, 200, mineru.settingsStatus(root))
+  })
+
+  json('/api/aosd/settings/mineru', 'POST', async (req, res) => {
+    if (req.method !== 'POST') return fail(res, 'method_not_allowed', '仅支持 POST', 405)
+    const body = await readJsonBody(req)
+    const root = config?.root
+    if (!root) return fail(res, 'no_data_root', '未配置数据目录', 409)
+    const saved = mineru.saveToken(root, body.token)
+    send(res, 200, { saved: true, source: saved.source, masked: mineru.maskToken(body.token) })
+  })
+
+  json('/api/aosd/documents/parse', 'POST', async (req, res) => {
+    if (req.method !== 'POST') return fail(res, 'method_not_allowed', '仅支持 POST', 405)
+    const url = new URL(req.url, 'http://local')
+    const profileKey = url.searchParams.get('profileKey')
+    const filename = url.searchParams.get('filename')
+    const consent = req.headers['x-cloud-consent'] === 'yes'
+    if (!profileKey || !filename) return fail(res, 'missing_params', 'profileKey/filename 必填')
+    if (!consent) return fail(res, 'cloud_consent_required', '需要先明确同意将所选文件发送到 MinerU 云端', 409)
+    const chunks = []
+    for await (const chunk of req) chunks.push(chunk)
+    const buffer = Buffer.concat(chunks)
+    if (!buffer.length) return fail(res, 'empty_file', '文件为空')
+    if (buffer.length > 30 * 1024 * 1024) return fail(res, 'file_too_large', '文件超过 30MB', 413)
+    if (!filename.toLowerCase().endsWith('.pdf')) return fail(res, 'unsupported_file', '当前只接受 PDF')
+    const { token } = mineru.readToken(config?.root || '.')
+    if (!token) return fail(res, 'mineru_no_token', '未配置 MinerU Token，请到设置页填写', 409)
+    const md = await mineru.parseWithMineru({ token, buffer, filename })
+    const documentId = 'doc-' + Date.now().toString(36)
+    const collectedAt = new Date().toISOString().slice(0, 10)
+    const candidates = mineru.extractCandidates(md, { documentId, collectedAt })
+    const dbh = getDb()
+    if (!dbh) return fail(res, 'database_unavailable', dbError || '数据库不可用', 503)
+    store.writeDocument(dbh, profileKey, {
+      title: filename.replace(/\.pdf$/i, ''), docType: '化验', org: '待核对（云解析）',
+      collectedAt, relativePath: 'documents/' + documentId + '.pdf', mime: 'application/pdf',
+      sha256: '0'.repeat(64), note: '云解析原件；sha256 待补' })
+    for (const c of candidates) store.writeCandidate(dbh, profileKey, c)
+    send(res, 201, { documentId, candidates: candidates.length })
+  })
+
+  /* ---------- 模块：营养 / 心理 / 试验读取 ---------- */
+  json('/api/aosd/nutrition', 'GET', (req, res) => {
+    const profileKey = new URL(req.url, 'http://local').searchParams.get('profileKey')
+    if (!profileKey) return fail(res, 'missing_profile', 'profileKey 必填')
+    send(res, 200, { entries: store.listNutrition(getDb(), profileKey) })
+  })
+
+  json('/api/aosd/mind', 'GET', (req, res) => {
+    const url = new URL(req.url, 'http://local')
+    const profileKey = url.searchParams.get('profileKey')
+    if (!profileKey) return fail(res, 'missing_profile', 'profileKey 必填')
+    send(res, 200, { entries: store.listMind(getDb(), profileKey, { includePrivate: url.searchParams.get('private') === '1' }) })
+  })
+
+  json('/api/aosd/trials', 'GET', (req, res) => {
+    const profileKey = new URL(req.url, 'http://local').searchParams.get('profileKey')
+    if (!profileKey) return fail(res, 'missing_profile', 'profileKey 必填')
+    send(res, 200, { profile: store.getTrialProfile(getDb(), profileKey), trials: store.listTrials(getDb(), profileKey), states: store.getSourceStates(getDb()) })
   })
 
   // 手工维护写入：叙述（本人/家属三类来源）

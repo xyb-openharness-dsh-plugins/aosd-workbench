@@ -186,3 +186,34 @@ test('单前缀分发：health 不被静态截住、UI 优先、未知 404、鉴
   const denied = res(); await mk('/api/aosd/health', 'GET', 401)({ url: '/api/aosd/health', method: 'GET', res: denied }, denied)
   assert.equal(denied.status, 401)
 })
+
+test('MinerU：表格转竖线、候选抽取保留不等式与缺失单位、Token 掩码', async () => {
+  const m = await import('../dsh/mineru.js')
+  const md = '<table><tr><td>项目</td><td>结果</td><td>单位</td><td>参考范围</td></tr><tr><td>C 反应蛋白</td><td>12.4</td><td>mg/L</td><td>0-8</td></tr><tr><td>铁蛋白</td><td>&lt;0.5</td><td>ng/mL</td><td>15-150</td></tr><tr><td>白细胞</td><td>6.9</td><td></td><td>3.5-9.5</td></tr></table>'
+  const pipes = m.htmlTablesToPipes(md)
+  assert.match(pipes, /\| C 反应蛋白 \| 12.4 \|/)
+  const cs = m.extractCandidates(md, { documentId: 'd1', collectedAt: '2026-10-28' })
+  assert.equal(cs.length, 3)
+  assert.equal(cs[0].valueNum, 12.4)
+  assert.equal(cs[0].refLow, 0); assert.equal(cs[0].refHigh, 8)
+  assert.equal(cs[1].valueNum, null, '不等式数值为空')
+  assert.equal(cs[1].rawText, '<0.5', '原文保留（实体已解码）')
+  assert.equal(cs[2].unit, null, '空单位不得补造')
+  assert.equal(m.maskToken('abcdefghijklmnop'), 'abcd…mnop')
+  assert.equal(m.maskToken('short'), '****')
+})
+
+test('MinerU：Token 文件保存为 600 且只回显掩码', async () => {
+  const m = await import('../dsh/mineru.js')
+  const dir = mkdtempSync(join(process.env.HOME, '.aosd-mineru-'))
+  try {
+    m.saveToken(dir, 'test-token-123456')
+    const st = m.settingsStatus(dir)
+    assert.equal(st.configured, true)
+    assert.equal(st.source, 'file')
+    assert.match(st.masked, /^test…3456$/)
+    assert.ok(!JSON.stringify(st).includes('test-token-123456'))
+    const { statSync } = await import('node:fs')
+    assert.equal(statSync(m.tokenPath(dir)).mode & 0o777, 0o600)
+  } finally { rmSync(dir, { recursive: true, force: true }) }
+})

@@ -219,3 +219,41 @@ export function toggleTrialSaved(db, profileKey, trialId) {
   db.prepare('UPDATE trials SET saved = ? WHERE profile_key = ? AND id = ?').run(trial.saved ? 0 : 1, profileKey, trialId)
   return db.prepare('SELECT * FROM trials WHERE profile_key = ? AND id = ?').get(profileKey, trialId)
 }
+
+/* ---------------- 读取模型（M5 模块接线用） ---------------- */
+export function listNutrition(db, profileKey) {
+  return db.prepare('SELECT * FROM nutrition_logs WHERE profile_key = ? ORDER BY occurred_at, rowid').all(profileKey)
+}
+export function listMind(db, profileKey, { includePrivate = false } = {}) {
+  const sql = includePrivate
+    ? 'SELECT * FROM mind_logs WHERE profile_key = ? ORDER BY occurred_at, rowid'
+    : 'SELECT * FROM mind_logs WHERE profile_key = ? AND is_private = 0 ORDER BY occurred_at, rowid'
+  return db.prepare(sql).all(profileKey)
+}
+export function listTrials(db, profileKey) {
+  return db.prepare('SELECT * FROM trials WHERE profile_key = ? ORDER BY rowid').all(profileKey)
+}
+export function getSourceStates(db) {
+  return db.prepare('SELECT * FROM source_states ORDER BY rowid').all()
+}
+export function getTrialProfile(db, profileKey) {
+  return db.prepare('SELECT * FROM trial_profiles WHERE profile_key = ?').get(profileKey) || null
+}
+export function upsertTrialSnapshot(db, profileKey, { profile, trials, states, snapshotDate }) {
+  db.prepare(`INSERT INTO trial_profiles (profile_key, doctor_record, disease_duration, treatment_lines_json, key_findings_json, comorbidity_json, notes, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(profile_key) DO UPDATE SET doctor_record=excluded.doctor_record, disease_duration=excluded.disease_duration,
+      treatment_lines_json=excluded.treatment_lines_json, key_findings_json=excluded.key_findings_json,
+      comorbidity_json=excluded.comorbidity_json, notes=excluded.notes, updated_at=excluded.updated_at`).run(
+    profileKey, profile.doctorRecord, profile.diseaseDuration, JSON.stringify(profile.treatmentLines),
+    JSON.stringify(profile.keyFindings), JSON.stringify(profile.comorbidity), profile.notes || null, new Date().toISOString())
+  db.prepare('DELETE FROM trials WHERE profile_key = ?').run(profileKey)
+  const insert = db.prepare(`INSERT INTO trials (profile_key, id, nct_id, title, phase, status, sites, conditions_json, criteria_json, pct, saved, snapshot_date, ord, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+  trials.forEach((t, i) => insert.run(profileKey, t.nctId, t.nctId, t.title, t.phase, t.status, t.sites || null,
+    JSON.stringify(t.conditions || []), JSON.stringify(t.criteria || []), t.pct, t.saved ? 1 : 0, snapshotDate, i + 1, new Date().toISOString()))
+  db.prepare('DELETE FROM source_states').run()
+  const ins = db.prepare('INSERT INTO source_states (source_id, state, reason_code, explanation, attempted, result_count, coverage_json, completeness_json, freshness_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+  for (const st of states) ins.run(st.sourceId, st.state, st.reasonCode || null, st.explanation || '', st.attempted ? 1 : 0,
+    st.resultCount ?? null, JSON.stringify(st.coverage || null), JSON.stringify(st.completeness || null), JSON.stringify(st.freshness || null))
+}

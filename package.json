@@ -1,6 +1,6 @@
 {
   "name": "@xyb-community/aosd-workbench",
-  "version": "0.5.8",
+  "version": "0.5.9",
   "description": "服务成人斯蒂尔病患者及家属的本机信息整理与就诊准备工作台；本人/家属/报告/医嘱分来源记录，SQLite 唯一存储，不输出诊断、风险或处置判断。",
   "private": true,
   "type": "module",
