@@ -127,3 +127,34 @@ test('磁盘库：root/aosd.sqlite 可重复打开且迁移幂等', () => {
   assert.ok(db2.prepare('SELECT * FROM subjects WHERE profile_key = ?').get('P1'))
   db2.close()
 })
+
+test('静态路由：UI 注入版本、指南 PDF 白名单、穿越拦截', async () => {
+  const { serveStatic } = await import('../dsh/static.js')
+  const fake = () => { const state = { head: null, chunks: [], done: false }
+    const res = {
+      writeHead(status, headers) { state.status = status; state.head = headers || {} },
+      end(b) { state.done = true; if (b) state.chunks.push(b) },
+      write(b) { state.chunks.push(b) },
+      on() { return res }, once() { return res }, emit() { return true },
+      get head() { return state.head }, get status() { return state.status },
+      get text() { return state.chunks.join('') },
+      get done() { return state.done },
+    }
+    return { res }
+  }
+  const opts = { version: '0.5.0', buildDate: '2026-10-28' }
+  const ui = fake()
+  assert.equal(serveStatic({ method: 'GET', url: '/api/aosd/ui/' }, ui.res, opts), true)
+  assert.match(String(ui.res.head?.['content-type'] || ui.res.head?.get?.('content-type') || ''), /text\/html/)
+  const pdf = fake()
+  assert.equal(serveStatic({ method: 'GET', url: '/api/aosd/assets/guidebooks/nhc-86-rare-diseases-2025.pdf' }, pdf.res, opts), true)
+  assert.match(String(pdf.res.head?.['content-type'] || pdf.res.head?.get?.('content-type') || ''), /application\/pdf/)
+  const evil = fake()
+  const handled = serveStatic({ method: 'GET', url: '/api/aosd/ui/../../package.json' }, evil.res, opts)
+  assert.ok(handled === false || handled === true, '穿越请求不能崩溃')
+  assert.doesNotMatch(evil.res.text || '', /"files"/, '不得泄漏 package.json 内容')
+  const miss = fake()
+  assert.equal(serveStatic({ method: 'GET', url: '/api/aosd/assets/guidebooks/other.pdf' }, miss.res, opts), false, '白名单外不放行')
+  const post = fake()
+  assert.equal(serveStatic({ method: 'POST', url: '/api/aosd/ui/' }, post.res, opts), false)
+})

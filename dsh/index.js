@@ -1,8 +1,9 @@
 import Schema from '@deepseek-ai/schemastery'
-import { readFileSync } from 'node:fs'
+import { readFileSync, statSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import * as store from './store.js'
 import { isStoreError } from './store.js'
+import { serveStatic } from './static.js'
 
 export const name = 'aosd-main'
 export const inject = ['webServer', 'connection']
@@ -11,7 +12,6 @@ export const Config = Schema.object({
   root: Schema.string(),
 })
 const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
-
 function send(res, status, body) {
   res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' })
   res.end(JSON.stringify(body))
@@ -39,6 +39,17 @@ function readJsonBody(req) {
 export function apply(ctx) {
   if (!ctx.webServer?.register) throw new Error('Desktop webServer.register is unavailable')
   const db = store.openStore(ctx.config?.root ? join(ctx.config.root, 'aosd.sqlite') : ':memory:')
+
+  const staticOpts = { version: manifest.version, buildDate: manifest.buildDate }
+  ctx.webServer.register({
+    kind: 'prefix', path: '/api/aosd/',
+    handler(req, res) {
+      const reject = ctx.connection?.requestRejection?.(req)
+      if (reject !== undefined && !String(req.url).startsWith('/api/aosd/ui')) return send(res, reject, { error: { code: 'auth_required', message: 'Authentication required' } })
+      if (serveStatic(req, res, staticOpts)) return
+      fail(res, 'not_found', '未知接口', 404)
+    },
+  }, 'aosd static + api')
 
   const json = (path, method, handler) => {
     ctx.webServer.register({

@@ -2,6 +2,10 @@
 
 只增不删；每条写清"改了什么 + 为什么 + 用户可见结果"。版本号与 VERSION、package.json 三处必须一致。
 
+## 0.5.0 — 2026-10-28
+
+- M5 开发版：原型移植 public/（12 页逐字符同源），Desktop 客户端改 iframe 加载 /api/aosd/ui/；服务端注入 __VERSION_DISPLAY__；新增公共指南白名单路由 /api/aosd/assets/guidebooks/。品牌定稿小炎宝 FlamePal。
+
 ## 0.4.0 — 2026-10-28
 
 - v0.4：临床研究三页（35号粗筛）、一图秀指标选择（分类折叠 ≤4）、toggletip 浮窗说明、SQLite 唯一存储（0001 冻结 + store + 写入接口 + 27 项测试）、手工/AI 写入演示闭环。
