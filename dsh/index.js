@@ -4,6 +4,8 @@ import { join } from 'node:path'
 import * as store from './store.js'
 import { isStoreError } from './store.js'
 import { serveStatic } from './static.js'
+import { createDispatcher } from './routes.js'
+import * as mineru from './mineru.js'
 
 export const name = 'aosd-main'
 export const inject = ['webServer', 'connection']
@@ -36,45 +38,137 @@ function readJsonBody(req) {
   })
 }
 
-export function apply(ctx) {
+export function apply(ctx, config = {}) {
   if (!ctx.webServer?.register) throw new Error('Desktop webServer.register is unavailable')
-  const db = store.openStore(ctx.config?.root ? join(ctx.config.root, 'aosd.sqlite') : ':memory:')
+  /* 懒加载：开库失败不能把插件带崩（否则路由不注册、UI 直接 not found）。
+     真机踩过：apply 里同步 openStore 抛错 → 整个 bundle 失效。 */
+  let db = null
+  let dbError = null
+  function getDb() {
+    if (db) return db
+    if (dbError) return null
+    try {
+      db = store.openStore(config?.root ? join(config.root, 'aosd.sqlite') : ':memory:')
+      return db
+    } catch (error) {
+      dbError = String(error && error.message || error)
+      return null
+    }
+  }
 
   const staticOpts = { version: manifest.version, buildDate: manifest.buildDate }
-  ctx.webServer.register({
-    kind: 'prefix', path: '/api/aosd/',
-    handler(req, res) {
-      const reject = ctx.connection?.requestRejection?.(req)
-      if (reject !== undefined && !String(req.url).startsWith('/api/aosd/ui')) return send(res, reject, { error: { code: 'auth_required', message: 'Authentication required' } })
-      if (serveStatic(req, res, staticOpts)) return
-      fail(res, 'not_found', '未知接口', 404)
-    },
-  }, 'aosd static + api')
-
+  /* 单前缀 + 内部分发（同家族底本）：宿主只注册 /api/aosd 一条 prefix，
+     内部先认静态子路径，再按「方法 + 精确路径」查 API 表。
+     这样不会出现“静态全前缀先截住 health 返回 404”的顺序问题
+     （2026-10-28 装机实测：客户端因此进入服务连接失败假状态）。 */
+  const apiRoutes = new Map()
   const json = (path, method, handler) => {
-    ctx.webServer.register({
-      kind: 'exact', path, method: undefined,
-      async handler(req, res) {
-        const reject = ctx.connection?.requestRejection?.(req)
-        if (reject !== undefined) return send(res, reject, { error: { code: 'auth_required', message: 'Authentication required' } })
-        try {
-          await handler(req, res)
-        } catch (error) {
-          if (isStoreError(error)) {
-            const status = error.code === 'store/not_found' ? 404 : error.code === 'store/conflict' ? 409 : 400
-            return send(res, status, { error: { code: error.code, message: error.message, retryable: false } })
-          }
-          if (error.code === 'payload_too_large') return fail(res, 'payload_too_large', '请求体过大', 413)
-          if (error.code === 'bad_json' || error.code === 'empty_body') return fail(res, error.code, error.message, 400)
-          send(res, 500, { error: { code: 'internal', message: '服务器内部错误', retryable: false } })
-        }
-      },
-    }, `aosd ${method} ${path}`)
+    apiRoutes.set(`${method} ${path}`, handler)
   }
+
+  async function dispatchApi(req, res, pathname) {
+    const reject = ctx.connection?.requestRejection?.(req)
+    if (reject !== undefined) return send(res, reject, { error: { code: 'auth_required', message: 'Authentication required' } })
+    const handler = apiRoutes.get(`${req.method} ${pathname}`)
+    if (!handler) return fail(res, 'not_found', '未知接口', 404)
+    if (pathname !== '/api/aosd/health' && !getDb()) return fail(res, 'database_unavailable', dbError || '数据库不可用', 503)
+    try {
+      await handler(req, res)
+    } catch (error) {
+      if (isStoreError(error)) {
+        const status = error.code === 'store/not_found' ? 404 : error.code === 'store/conflict' ? 409 : 400
+        return send(res, status, { error: { code: error.code, message: error.message, retryable: false } })
+      }
+      if (error.code === 'payload_too_large') return fail(res, 'payload_too_large', '请求体过大', 413)
+      if (error.code === 'bad_json' || error.code === 'empty_body') return fail(res, error.code, error.message, 400)
+      send(res, 500, { error: { code: 'internal', message: '服务器内部错误', retryable: false } })
+    }
+  }
+
+  const handle = createDispatcher({
+    apiRoutes,
+    serveStatic: (req, res) => serveStatic(req, res, staticOpts),
+    auth: (req) => ctx.connection?.requestRejection?.(req),
+    sendJson: send,
+    notFound: (res, message) => fail(res, 'not_found', message, 404),
+  })
+  ctx.effect(() => {
+    const dispose = ctx.webServer.register({ kind: 'prefix', path: '/api/aosd', handler: handle })
+    return () => {
+      try { dispose && dispose() } catch { /* 卸载清理失败不盖住原错误 */ }
+      try { db && db.close() } catch { /* 同上 */ }
+    }
+  }, 'aosd ui + api')
 
   json('/api/aosd/health', 'GET', (req, res) => {
     if (req.method !== 'GET') return fail(res, 'method_not_allowed', '仅支持 GET', 405)
-    send(res, 200, { ok: true, version: manifest.version, apiVersion: 'v1', capabilities: ['health', 'write'] })
+    send(res, 200, { ok: true, version: manifest.version, apiVersion: 'v1', capabilities: ['health', 'write'], database: db ? 'open' : (dbError ? 'error' : 'lazy'), dir: config?.root || null })
+  })
+
+  /* ---------- 模块：MinerU 设置与解析（显式授权，失败不产候选） ---------- */
+  json('/api/aosd/settings/mineru', 'GET', (req, res) => {
+    if (req.method !== 'GET') return fail(res, 'method_not_allowed', '仅支持 GET', 405)
+    const root = config?.root || '.'
+    send(res, 200, mineru.settingsStatus(root))
+  })
+
+  json('/api/aosd/settings/mineru', 'POST', async (req, res) => {
+    if (req.method !== 'POST') return fail(res, 'method_not_allowed', '仅支持 POST', 405)
+    const body = await readJsonBody(req)
+    const root = config?.root
+    if (!root) return fail(res, 'no_data_root', '未配置数据目录', 409)
+    const saved = mineru.saveToken(root, body.token)
+    send(res, 200, { saved: true, source: saved.source, masked: mineru.maskToken(body.token) })
+  })
+
+  json('/api/aosd/documents/parse', 'POST', async (req, res) => {
+    if (req.method !== 'POST') return fail(res, 'method_not_allowed', '仅支持 POST', 405)
+    const url = new URL(req.url, 'http://local')
+    const profileKey = url.searchParams.get('profileKey')
+    const filename = url.searchParams.get('filename')
+    const consent = req.headers['x-cloud-consent'] === 'yes'
+    if (!profileKey || !filename) return fail(res, 'missing_params', 'profileKey/filename 必填')
+    if (!consent) return fail(res, 'cloud_consent_required', '需要先明确同意将所选文件发送到 MinerU 云端', 409)
+    const chunks = []
+    for await (const chunk of req) chunks.push(chunk)
+    const buffer = Buffer.concat(chunks)
+    if (!buffer.length) return fail(res, 'empty_file', '文件为空')
+    if (buffer.length > 30 * 1024 * 1024) return fail(res, 'file_too_large', '文件超过 30MB', 413)
+    if (!filename.toLowerCase().endsWith('.pdf')) return fail(res, 'unsupported_file', '当前只接受 PDF')
+    const { token } = mineru.readToken(config?.root || '.')
+    if (!token) return fail(res, 'mineru_no_token', '未配置 MinerU Token，请到设置页填写', 409)
+    const md = await mineru.parseWithMineru({ token, buffer, filename })
+    const documentId = 'doc-' + Date.now().toString(36)
+    const collectedAt = new Date().toISOString().slice(0, 10)
+    const candidates = mineru.extractCandidates(md, { documentId, collectedAt })
+    const dbh = getDb()
+    if (!dbh) return fail(res, 'database_unavailable', dbError || '数据库不可用', 503)
+    store.writeDocument(dbh, profileKey, {
+      title: filename.replace(/\.pdf$/i, ''), docType: '化验', org: '待核对（云解析）',
+      collectedAt, relativePath: 'documents/' + documentId + '.pdf', mime: 'application/pdf',
+      sha256: '0'.repeat(64), note: '云解析原件；sha256 待补' })
+    for (const c of candidates) store.writeCandidate(dbh, profileKey, c)
+    send(res, 201, { documentId, candidates: candidates.length })
+  })
+
+  /* ---------- 模块：营养 / 心理 / 试验读取 ---------- */
+  json('/api/aosd/nutrition', 'GET', (req, res) => {
+    const profileKey = new URL(req.url, 'http://local').searchParams.get('profileKey')
+    if (!profileKey) return fail(res, 'missing_profile', 'profileKey 必填')
+    send(res, 200, { entries: store.listNutrition(getDb(), profileKey) })
+  })
+
+  json('/api/aosd/mind', 'GET', (req, res) => {
+    const url = new URL(req.url, 'http://local')
+    const profileKey = url.searchParams.get('profileKey')
+    if (!profileKey) return fail(res, 'missing_profile', 'profileKey 必填')
+    send(res, 200, { entries: store.listMind(getDb(), profileKey, { includePrivate: url.searchParams.get('private') === '1' }) })
+  })
+
+  json('/api/aosd/trials', 'GET', (req, res) => {
+    const profileKey = new URL(req.url, 'http://local').searchParams.get('profileKey')
+    if (!profileKey) return fail(res, 'missing_profile', 'profileKey 必填')
+    send(res, 200, { profile: store.getTrialProfile(getDb(), profileKey), trials: store.listTrials(getDb(), profileKey), states: store.getSourceStates(getDb()) })
   })
 
   // 手工维护写入：叙述（本人/家属三类来源）
@@ -82,7 +176,7 @@ export function apply(ctx) {
     if (req.method !== 'POST') return fail(res, 'method_not_allowed', '仅支持 POST', 405)
     const body = await readJsonBody(req)
     if (!body.profileKey) return fail(res, 'missing_profile', 'profileKey 必填')
-    const row = store.writeNarrative(db, body.profileKey, body)
+    const row = store.writeNarrative(getDb(), body.profileKey, body)
     send(res, 201, { narrative: row })
   })
 
@@ -90,7 +184,7 @@ export function apply(ctx) {
     if (req.method !== 'POST') return fail(res, 'method_not_allowed', '仅支持 POST', 405)
     const body = await readJsonBody(req)
     if (!body.profileKey || !body.id) return fail(res, 'missing_profile', 'profileKey/id 必填')
-    const row = store.correctNarrative(db, body.profileKey, body.id, body)
+    const row = store.correctNarrative(getDb(), body.profileKey, body.id, body)
     send(res, 201, { narrative: row })
   })
 
@@ -98,28 +192,28 @@ export function apply(ctx) {
     if (req.method !== 'POST') return fail(res, 'method_not_allowed', '仅支持 POST', 405)
     const body = await readJsonBody(req)
     if (!body.profileKey) return fail(res, 'missing_profile', 'profileKey 必填')
-    send(res, 201, { entry: store.writeNutrition(db, body.profileKey, body) })
+    send(res, 201, { entry: store.writeNutrition(getDb(), body.profileKey, body) })
   })
 
   json('/api/aosd/mind', 'POST', async (req, res) => {
     if (req.method !== 'POST') return fail(res, 'method_not_allowed', '仅支持 POST', 405)
     const body = await readJsonBody(req)
     if (!body.profileKey) return fail(res, 'missing_profile', 'profileKey 必填')
-    send(res, 201, { entry: store.writeMind(db, body.profileKey, body) })
+    send(res, 201, { entry: store.writeMind(getDb(), body.profileKey, body) })
   })
 
   json('/api/aosd/questions', 'POST', async (req, res) => {
     if (req.method !== 'POST') return fail(res, 'method_not_allowed', '仅支持 POST', 405)
     const body = await readJsonBody(req)
     if (!body.profileKey) return fail(res, 'missing_profile', 'profileKey 必填')
-    send(res, 201, { question: store.writeQuestion(db, body.profileKey, body) })
+    send(res, 201, { question: store.writeQuestion(getDb(), body.profileKey, body) })
   })
 
   json('/api/aosd/candidates/:id/decision', 'POST', async (req, res) => {
     if (req.method !== 'POST') return fail(res, 'method_not_allowed', '仅支持 POST', 405)
     const body = await readJsonBody(req)
     if (!body.profileKey || !body.id) return fail(res, 'missing_profile', 'profileKey/id 必填')
-    const result = store.decideCandidate(db, body.profileKey, body.id, body.decision)
+    const result = store.decideCandidate(getDb(), body.profileKey, body.id, body.decision)
     send(res, 200, result)
   })
 
@@ -127,7 +221,7 @@ export function apply(ctx) {
     if (req.method !== 'POST') return fail(res, 'method_not_allowed', '仅支持 POST', 405)
     const body = await readJsonBody(req)
     if (!body.profileKey || !body.id) return fail(res, 'missing_profile', 'profileKey/id 必填')
-    send(res, 200, { trial: store.toggleTrialSaved(db, body.profileKey, body.id) })
+    send(res, 200, { trial: store.toggleTrialSaved(getDb(), body.profileKey, body.id) })
   })
 
   json('/api/aosd/day', 'GET', (req, res) => {
@@ -137,8 +231,7 @@ export function apply(ctx) {
     const date = url.searchParams.get('date')
     if (!profileKey || !date) return fail(res, 'missing_params', 'profileKey/date 必填')
     const includePrivate = url.searchParams.get('private') === '1'
-    send(res, 200, store.readDay(db, profileKey, date, { includePrivate }))
+    send(res, 200, store.readDay(getDb(), profileKey, date, { includePrivate }))
   })
 
-  ctx.effect(() => db.close?.(), 'aosd store close')
 }

@@ -1,7 +1,13 @@
-/* 成人斯蒂尔病工作台原型 v0.2 —— 合成演示数据，无后端。 */
+/* 成人斯蒂尔病工作台开发版 —— 与原型逐字符同源；接口与资产经 /api/aosd/* 路由。 */
+function localGuideUrl(rel) {
+  if (location.pathname.includes('/api/aosd/ui')) return '/api/aosd/assets/' + rel
+  return '../../' + rel
+}
 (function () {
   'use strict'
   const D = window.DEMO_DATA
+  /* 嵌入式（Desktop iframe）下原生会话是唯一 AI 面板；file:// 原型才用演示面板。 */
+  const EMBEDDED = (() => { try { return window.parent !== window } catch { return false } })()
   const PROFILES = D.profiles
   const state = {
     profile: 'A',
@@ -684,7 +690,7 @@
         <h2>本地与官方指南</h2>
         <p class="sub">本地阅读用于离线核对；官方链接用于追到原始发布页。</p>
         <div class="btn-row">
-          <a class="ghost" href="../../assets/guidebooks/nhc-86-rare-diseases-2025.pdf#page=21" target="_blank" rel="noopener">本地阅读（PDF 第21页起）</a>
+          <a class="ghost" href="${localGuideUrl('assets/guidebooks/nhc-86-rare-diseases-2025.pdf#page=21')}" target="_blank" rel="noopener">本地阅读（PDF 第21页起）</a>
           <a class="ghost" href="https://www.gov.cn/zhengce/zhengceku/202507/P020250710595668350272.pdf" target="_blank" rel="noopener noreferrer">官方 PDF</a>
         </div>
         <p class="meta-line">本地文件 517 页，AOSD 正文 17–21 / PDF 21–25；原型路径与开发版路由分开验证。</p>
@@ -783,7 +789,19 @@
     return `我在整理${p.displayName.replace('（合成）', '')}的记录，请帮我把已选内容整理成问题清单；不要诊断、不要建议用药。`
   }
 
+  function sendToAgent(prompt) {
+    if (!EMBEDDED) { openAgent(); return }
+    const target = location.origin && location.origin !== 'null' ? location.origin : '*'
+    try {
+      window.parent.postMessage({ type: 'aosd:agent-draft', prompt, send: true }, target)
+      notify('已带入右侧原生 AI 会话；发送由宿主完成，回复不会自动写入记录。')
+    } catch (error) {
+      notify('没能把草稿带入原生会话：' + (error && error.message ? error.message : error))
+    }
+  }
+
   function openAgent() {
+    if (EMBEDDED) { sendToAgent(agentDraftFor(state.view)); return }
     state.agentOpen = true
     const dock = document.getElementById('agent-dock')
     dock.hidden = false
@@ -961,7 +979,7 @@
       if (target.dataset.doc) { event.preventDefault(); openDocument(target.dataset.doc); return }
       if (target.dataset.trial) { event.preventDefault(); openTrial(target.dataset.trial); return }
       if (target.dataset.action === 'trial-tab') { event.preventDefault(); state.trialTab = target.dataset.tab; render(); return }
-      if (target.dataset.discuss) { event.preventDefault(); openAgent(); return }
+      if (target.dataset.discuss) { event.preventDefault(); sendToAgent(agentDraftFor(state.view)); return }
       if (target.dataset.action === 'go') { event.preventDefault(); go(target.dataset.view || 'dashboard'); return }
       if (target.dataset.action === 'quick-record') { event.preventDefault(); go('voices'); return }
       if (target.dataset.action === 'upload') {
@@ -1008,6 +1026,7 @@
       btn.textContent = state.large ? '标准字' : '大字'
     })
     document.getElementById('agent-toggle').addEventListener('click', () => {
+      if (EMBEDDED) { sendToAgent(agentDraftFor(state.view)); return }
       if (state.agentOpen) closeAgent(); else openAgent()
     })
     document.getElementById('agent-close').addEventListener('click', closeAgent)
@@ -1063,6 +1082,7 @@
   }
 
   function boot() {
+    if (EMBEDDED) document.documentElement.classList.add('is-embedded')
     pv = window.createPageView({ crumbRoot: '主页' })
     document.getElementById('topbar').insertAdjacentHTML('beforeend', '<button type="button" class="ghost" data-primer-open aria-label="疾病概要：定义、指南、治疗全景、趋势">?</button>')
     bind()

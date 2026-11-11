@@ -2,13 +2,41 @@
 
 只增不删；每条写清"改了什么 + 为什么 + 用户可见结果"。版本号与 VERSION、package.json 三处必须一致。
 
-## 0.5.1 — 2026-11-11
+## 0.5.9 — 2026-10-28
 
-- 补：面板此前只有业务 iframe，**完全没有原生 AI 对话入口**——`Panel()` 连 props 都不接，宿主给的 conversation 节点无处安放。现按家族 A 形态补齐：自建顶栏（品牌 + 版本 chip + 状态 + 「AI 对话」+ 重新加载）、业务区 iframe、1px 可拖分隔线、右侧原生会话常挂载、窄屏覆盖式抽屉、宽度本地记忆。
-- 新：`lib/layout.js` 作为面板参数唯一来源，由 `scripts/build-version.mjs` 注入客户端 `layout:begin/end` 块（含 customFrame 与 businessWidth，客户端不再手写第二份默认值）；同时生成 `lib/version.js`。
-- 新：会话契约按 9 条落地——`ownsSession(currentSession())` 判会话、无会话点按钮走 `newSession(defaultWorkspace?.()?.workspaceId)`、取消不留空会话、失败在工作台内报原因、订阅 `subscribe` 重渲染、草稿只填入不发送。
-- 校验：`check-agent-pane-contract.mjs` 与 `build-version --check` 并入 `npm run check`；单测纳入检查链。
-- 已知缺口（不在本次范围）：本仓没有文案红线检查器（`check-wording.mjs`），audit 的 `check/文案红线` 仍为 fail；要引入需先按本癌种口径清理页面文案。
+- 模块服务端补齐：MinerU（Token 文件/掩码、云授权、v4 解析、ZIP 读取、表格转竖线、候选抽取、失败不产候选）、临床试验读取与收藏、营养/心理读写；新增 7 条路由与 2 组单测（31/31）。
+
+## 0.5.8 — 2026-10-28
+
+- 嵌入式隐藏 iframe 内层顶栏，避免与宿主外壳双标题栏；public 与原型 app/style 保持逐字符一致。
+
+## 0.5.7 — 2026-10-28
+
+- 移植 VasPal 已验收客户端：原生 AI 会话（ensureSession）、业务/会话可拖分隔线（25–45%、悬停增亮+⠿、遮罩、指针捕获、键盘、localStorage）；iframe 内 AI 按钮在嵌入式下直接走 `aosd:agent-draft` 发送，不再开演示面板。
+
+## 0.5.6 — 2026-10-28
+
+- 修复 apply 必崩：删除懒加载重构后遗留的 `ctx.effect(() => db.close?.())`（db 此时为 null）。桩件实测 UI 200/3174B、health 200。
+
+## 0.5.5 — 2026-10-28
+
+- 修复插件加载即失败导致路由 not found：apply 改为 `ctx.effect` 内注册、SQLite 懒加载（失败不回累插件），数据接口返回 503 而非整包挂掉；health 增加 database 状态。
+
+## 0.5.4 — 2026-10-28
+
+- 修复面板空白：主容器固定 100vh，iframe 最小高度 calc(100vh-34px)，新增常显标题条与“加载了但无内容”诊断；不再让 iframe 在无高度容器里塌成 0。
+
+## 0.5.3 — 2026-10-28
+
+- 分发逻辑抽到 dsh/routes.js 并加 5 类断言（health 不被静态截住、UI 优先、未知 404、鉴权 401）。
+
+## 0.5.2 — 2026-10-28
+
+- 宿主路由改为单前缀 /api/aosd + 内部分发（静态子路径优先，API 精确匹配），彻底避免多前缀注册顺序导致 health 404。
+
+## 0.5.1 — 2026-10-28
+
+- 修复装机后“服务连接失败”假状态：静态路由不再注册 /api/aosd/ 全前缀（会截住 health 并 404）；客户端改为以 iframe onLoad 为准，health 不再作为 UI 门槛。
 
 ## 0.5.0 — 2026-10-28
 

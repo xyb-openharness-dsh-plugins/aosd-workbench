@@ -47,6 +47,7 @@ check(/metricCards/.test(app) && /rotateY\(180deg\)/.test(read('prototypes/v0.2/
 check(/viewTrials/.test(app) && /基础建档/.test(app) && /结果分析/.test(app), '临床研究缺三页结构')
 check(/data-primer-open/.test(app) && /DISEASE_PRIMER/.test(app), '36号疾病概要入口缺失')
 check(/viewNutrition/.test(app) && /viewMind/.test(app), '营养或心理页缺失')
+check(/ctx\.effect\(\(\) => \{\s*const dispose = ctx\.webServer\.register/.test(read('dsh/index.js')) && !/ctx\.effect\(\(\) => db\.close/.test(read('dsh/index.js')), '宿主注册未放入 effect 或残留裸 db.close')
 check(/openManualRecord/.test(app) && /demoCandidates/.test(app), '手工/AI写入演示链缺失')
 check(/data-action="upload"/.test(app) && /逐项确认/.test(app), '上传-解析-确认闭环缺失')
 check(/本地阅读/.test(interaction) && /官方 PDF/.test(interaction), '指南缺本地/官方双入口')

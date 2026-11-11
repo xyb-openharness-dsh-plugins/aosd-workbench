@@ -158,3 +158,62 @@ test('静态路由：UI 注入版本、指南 PDF 白名单、穿越拦截', asy
   const post = fake()
   assert.equal(serveStatic({ method: 'POST', url: '/api/aosd/ui/' }, post.res, opts), false)
 })
+
+test('单前缀分发：health 不被静态截住、UI 优先、未知 404、鉴权 401', async () => {
+  const { createDispatcher } = await import('../dsh/routes.js')
+  const calls = []
+  const apiRoutes = new Map([
+    ['GET /api/aosd/health', async (req, res) => { calls.push('health'); res.writeHead(200, { 'content-type': 'application/json' }); res.end('{"ok":true}') }],
+  ])
+  const res = () => { const state = { status: null, head: null, text: '' }; const r = {
+    writeHead(s, h) { state.status = s; state.head = h || {} }, end(b) { state.text += b || '' },
+    write(b) { state.text += b || '' }, on() { return r }, once() { return r }, emit() { return true },
+    get status() { return state.status }, get head() { return state.head }, get text() { return state.text } }
+    return r }
+  const mk = (url, method = 'GET', authReject) => createDispatcher({
+    apiRoutes,
+    serveStatic: (req) => req.url.startsWith('/api/aosd/ui') ? (req.res.writeHead(200, { 'content-type': 'text/html' }), req.res.end('UI'), true) : false,
+    auth: () => authReject,
+    sendJson: (r2, status, body) => { r2.writeHead(status, { 'content-type': 'application/json' }); r2.end(JSON.stringify(body)) },
+    notFound: (r2, message) => { r2.writeHead(404, {}); r2.end(message) },
+  })
+  const h = res(); await mk('/api/aosd/health')({ url: '/api/aosd/health', method: 'GET', res: h }, h)
+  assert.equal(h.status, 200); assert.equal(h.text, '{"ok":true}'); assert.deepEqual(calls, ['health'])
+  const ui = res(); await mk('/api/aosd/ui/')({ url: '/api/aosd/ui/', method: 'GET', res: ui }, ui)
+  assert.equal(ui.status, 200); assert.equal(ui.text, 'UI')
+  const miss = res(); await mk('/api/aosd/nope')({ url: '/api/aosd/nope', method: 'GET', res: miss }, miss)
+  assert.equal(miss.status, 404)
+  const denied = res(); await mk('/api/aosd/health', 'GET', 401)({ url: '/api/aosd/health', method: 'GET', res: denied }, denied)
+  assert.equal(denied.status, 401)
+})
+
+test('MinerU：表格转竖线、候选抽取保留不等式与缺失单位、Token 掩码', async () => {
+  const m = await import('../dsh/mineru.js')
+  const md = '<table><tr><td>项目</td><td>结果</td><td>单位</td><td>参考范围</td></tr><tr><td>C 反应蛋白</td><td>12.4</td><td>mg/L</td><td>0-8</td></tr><tr><td>铁蛋白</td><td>&lt;0.5</td><td>ng/mL</td><td>15-150</td></tr><tr><td>白细胞</td><td>6.9</td><td></td><td>3.5-9.5</td></tr></table>'
+  const pipes = m.htmlTablesToPipes(md)
+  assert.match(pipes, /\| C 反应蛋白 \| 12.4 \|/)
+  const cs = m.extractCandidates(md, { documentId: 'd1', collectedAt: '2026-10-28' })
+  assert.equal(cs.length, 3)
+  assert.equal(cs[0].valueNum, 12.4)
+  assert.equal(cs[0].refLow, 0); assert.equal(cs[0].refHigh, 8)
+  assert.equal(cs[1].valueNum, null, '不等式数值为空')
+  assert.equal(cs[1].rawText, '<0.5', '原文保留（实体已解码）')
+  assert.equal(cs[2].unit, null, '空单位不得补造')
+  assert.equal(m.maskToken('abcdefghijklmnop'), 'abcd…mnop')
+  assert.equal(m.maskToken('short'), '****')
+})
+
+test('MinerU：Token 文件保存为 600 且只回显掩码', async () => {
+  const m = await import('../dsh/mineru.js')
+  const dir = mkdtempSync(join(process.env.HOME, '.aosd-mineru-'))
+  try {
+    m.saveToken(dir, 'test-token-123456')
+    const st = m.settingsStatus(dir)
+    assert.equal(st.configured, true)
+    assert.equal(st.source, 'file')
+    assert.match(st.masked, /^test…3456$/)
+    assert.ok(!JSON.stringify(st).includes('test-token-123456'))
+    const { statSync } = await import('node:fs')
+    assert.equal(statSync(m.tokenPath(dir)).mode & 0o777, 0o600)
+  } finally { rmSync(dir, { recursive: true, force: true }) }
+})

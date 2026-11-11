@@ -270,3 +270,7 @@ svg.chart{aspect-ratio:1080/520}
   .oc-layout{grid-template-columns:1fr}
   .oc-side{max-height:none}
 }
+
+/* 嵌入式（Desktop iframe）：宿主外壳已有顶栏，隐藏内层顶栏避免双标题栏 */
+.is-embedded .topbar{display:none}
+.is-embedded .shell{min-height:100vh}
