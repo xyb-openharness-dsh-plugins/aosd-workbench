@@ -2,6 +2,14 @@
 
 只增不删；每条写清"改了什么 + 为什么 + 用户可见结果"。版本号与 VERSION、package.json 三处必须一致。
 
+## 0.5.1 — 2026-11-11
+
+- 补：面板此前只有业务 iframe，**完全没有原生 AI 对话入口**——`Panel()` 连 props 都不接，宿主给的 conversation 节点无处安放。现按家族 A 形态补齐：自建顶栏（品牌 + 版本 chip + 状态 + 「AI 对话」+ 重新加载）、业务区 iframe、1px 可拖分隔线、右侧原生会话常挂载、窄屏覆盖式抽屉、宽度本地记忆。
+- 新：`lib/layout.js` 作为面板参数唯一来源，由 `scripts/build-version.mjs` 注入客户端 `layout:begin/end` 块（含 customFrame 与 businessWidth，客户端不再手写第二份默认值）；同时生成 `lib/version.js`。
+- 新：会话契约按 9 条落地——`ownsSession(currentSession())` 判会话、无会话点按钮走 `newSession(defaultWorkspace?.()?.workspaceId)`、取消不留空会话、失败在工作台内报原因、订阅 `subscribe` 重渲染、草稿只填入不发送。
+- 校验：`check-agent-pane-contract.mjs` 与 `build-version --check` 并入 `npm run check`；单测纳入检查链。
+- 已知缺口（不在本次范围）：本仓没有文案红线检查器（`check-wording.mjs`），audit 的 `check/文案红线` 仍为 fail；要引入需先按本癌种口径清理页面文案。
+
 ## 0.5.0 — 2026-10-28
 
 - M5 开发版：原型移植 public/（12 页逐字符同源），Desktop 客户端改 iframe 加载 /api/aosd/ui/；服务端注入 __VERSION_DISPLAY__；新增公共指南白名单路由 /api/aosd/assets/guidebooks/。品牌定稿小炎宝 FlamePal。
