@@ -60,4 +60,13 @@
 - M1 完成三路调研合流：医学十主题/EULAR-PReS全文/NMPA 40组检索、患者公开证据 E01–E14（0访谈）、家族对比与一级重名率 25%/12.5%。
 - 三轮独立评审修订：三类代记与授权、AI 个体判断/急症退出、一期原报告值表替代曲线、未核对材料可导出、快照 revision、诊后答复、config.root 唯一事实库、研究不占位。
 - 官方指南 PDF 按用户要求随包保留，真实 npm pack 清单与 SHA-256 已验；浮窗、HTTP、装机未验。
-- 当前 `npm run check` 通过、`npm test` 10/10；不表示原型、业务、医学审核或患者需求已验证。
+- 当前 `npm run check` 通过、`npm test` 10/10；不表示原型、业务、医学审核或患者需求已验证。## 0.5.11 — 2026-11-11
+
+- 合并 `research/main`（0.5.10 交付线）进 `main`：main 不再只是接入骨架，业务界面、静态路由、sqlite 存储、试验快照与原生 AI 面板都在 main 上了；README 里「main 不是交付线」的说明同步撤掉。
+- 修：合并时 `lib/client.js` 头部出现两份常量（`UI_ENTRY` 重复声明会直接 SyntaxError），已去重并保留注入后的那份；客户端 `VERSION` 字面量从 0.5.9 修正为与 `VERSION`/`package.json` 一致。
+- 新：补 `lib/layout.js`（面板参数唯一来源：customFrame / businessSide / businessWidth 0.65 / agentPane 七项）与 `lib/version.js`（版本字面量副本）。
+- 新：`scripts/check-pane-params.mjs` 入检查链——比对客户端里的 `Number('0.65')` 等字面量与 `lib/layout.js`、`VERSION` 是否一致；这类分叉过去没有任何检查会响（客户端是单文件，没有构建注入步，注释里那句"由 build-client 注入"早已不存在）。
+- 修：`.gitignore` 补 `.secrets/`（假 Token 会被误提交）；`dsh/mineru.js` 增加 `MINERU_TOKEN_URL`，未配置与 401/403 两类失败消息里都给出申请/重置地址——患者遇到 Token 失效时知道去哪换。
+- 校验：`npm run check` 通过，`npm test` 全过；`dsh-wb-cli audit` 40/43，剩 1 项 `check/文案红线`（本仓没有文案红线检查器，如实保留为待补闸门）+ 2 项待人工。
+
+

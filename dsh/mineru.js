@@ -126,14 +126,20 @@ async function call(path, { token, method = 'GET', body, headers = {} } = {}) {
   try { data = text ? JSON.parse(text) : null } catch { /* 非 JSON */ }
   if (!response.ok) {
     const code = data?.code ?? response.status
-    throw Object.assign(new Error(`MinerU 请求失败（${response.status}${code ? ' / ' + code : ''}）`), { status: response.status })
+    const hint = (response.status === 401 || response.status === 403)
+      ? `；Token 可能已失效，到 ${MINERU_TOKEN_URL} 重新申请或重置`
+      : ''
+    throw Object.assign(new Error(`MinerU 请求失败（${response.status}${code ? ' / ' + code : ''}）${hint}`), { status: response.status })
   }
   return data
 }
 
 /** 解析一份 PDF（pipeline 默认）；失败抛出，不返回伪造内容。 */
+/** Token 申请 / 重置页：401/403 或未配置时要把地址给患者，否则他不知道去哪换。 */
+export const MINERU_TOKEN_URL = 'https://mineru.net/apiManage/token'
+
 export async function parseWithMineru({ token, buffer, filename }) {
-  if (!token) throw Object.assign(new Error('未配置 MinerU Token'), { code: 'mineru_no_token' })
+  if (!token) throw Object.assign(new Error(`未配置 MinerU Token；到 ${MINERU_TOKEN_URL} 申请后填进设置页`), { code: 'mineru_no_token' })
   const batch = await call('/file-urls/batch', { token, method: 'POST', body: { enable_formula: false, language: 'ch', files: [{ name: filename, data_id: filename }] } })
   const uploadUrl = batch?.data?.file_urls?.[0]
   const batchId = batch?.data?.batch_id

@@ -16,3 +16,6 @@ output/
 guidebooks/*.pdf
 guidebooks/*.pages.json
 guidebooks/nhc-page-*.txt
+# 本机密钥（MinerU Token 等）绝不入库
+.secrets/
+.secrets
